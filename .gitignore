@@ -19,3 +19,6 @@ po/clean.pot
 /rpmbuild/
 *.rpm
 *.tar.gz
+
+# Notas internas de handoff (não publicar)
+NOTES.md
