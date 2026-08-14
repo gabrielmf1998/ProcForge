@@ -84,7 +84,12 @@ install(FILES data/org.procforge.Helper1.conf      DESTINATION share/dbus-1/syst
 install(FILES data/org.procforge.Helper1.service   DESTINATION share/dbus-1/system-services)
 install(FILES data/procforged.service              DESTINATION lib/systemd/system)
 install(FILES data/org.procforge.ProcForge.desktop DESTINATION share/applications)
-install(FILES data/procforge.svg                   DESTINATION share/icons/hicolor/scalable/apps)
+# Ícone do app (raster PNG, tamanhos do tema hicolor)
+foreach(_sz 16 22 24 32 48 64 128 256)
+    install(FILES data/icons/procforge-${_sz}.png
+            DESTINATION share/icons/hicolor/${_sz}x${_sz}/apps
+            RENAME procforge.png)
+endforeach()
 
 # Tradução en_US (pt-BR é o idioma base = msgids)
 find_program(MSGFMT msgfmt)

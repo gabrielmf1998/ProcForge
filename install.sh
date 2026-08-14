@@ -78,7 +78,10 @@ ok "compilado"
 info "Instalando a GUI em $PREFIX (sem root)…"
 install -Dm755 "$SRC/build/procforge"                    "$PREFIX/bin/procforge"
 install -Dm644 "$SRC/data/org.procforge.ProcForge.desktop" "$PREFIX/share/applications/org.procforge.ProcForge.desktop"
-install -Dm644 "$SRC/data/procforge.svg"                 "$PREFIX/share/icons/hicolor/scalable/apps/procforge.svg"
+for _sz in 16 22 24 32 48 64 128 256; do
+    install -Dm644 "$SRC/data/icons/procforge-${_sz}.png" \
+        "$PREFIX/share/icons/hicolor/${_sz}x${_sz}/apps/procforge.png"
+done
 # O hicolor do usuário precisa de um index.theme, senão o gtk-update-icon-cache
 # falha ("No theme index file"). ATENÇÃO: ele tem precedência sobre o
 # /usr/share/icons/hicolor, então precisa ser o índice COMPLETO do sistema —

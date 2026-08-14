@@ -73,7 +73,7 @@ MainWindow::MainWindow(QWidget *parent)
     const QString host = QSysInfo::machineHostName();
     const QString user = QString::fromLocal8Bit(qgetenv("USER"));
     setWindowTitle(QStringLiteral("ProcForge  [%1@%2]").arg(user, host));
-    setWindowIcon(QIcon(QStringLiteral(":/procforge.svg")));
+    setWindowIcon(QIcon(QStringLiteral(":/procforge.png")));
     resize(1180, 780);
 
     // ---- modelo + proxy + árvore ----

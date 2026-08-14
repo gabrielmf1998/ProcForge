@@ -20,7 +20,7 @@ int main(int argc, char **argv)
     QApplication::setDesktopFileName(QStringLiteral("org.procforge.ProcForge"));
 
     QApplication::setOrganizationName(QStringLiteral("ProcForge"));
-    QApplication::setWindowIcon(QIcon(QStringLiteral(":/procforge.svg")));
+    QApplication::setWindowIcon(QIcon(QStringLiteral(":/procforge.png")));
     KLocalizedString::setApplicationDomain(QByteArrayLiteral("procforge"));
 
     // Idioma escolhido pelo usuário (antes de construir a UI).

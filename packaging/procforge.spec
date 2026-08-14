@@ -55,9 +55,17 @@ com polkit por AÇÃO e capabilities mínimas.
 %post
 %systemd_post procforged.service
 /usr/bin/systemctl daemon-reload >/dev/null 2>&1 || :
+touch --no-create %{_datadir}/icons/hicolor &>/dev/null || :
 
 %postun
 %systemd_postun procforged.service
+if [ $1 -eq 0 ] ; then
+    touch --no-create %{_datadir}/icons/hicolor &>/dev/null
+    gtk-update-icon-cache %{_datadir}/icons/hicolor &>/dev/null || :
+fi
+
+%posttrans
+gtk-update-icon-cache %{_datadir}/icons/hicolor &>/dev/null || :
 
 %files
 %license LICENSE
@@ -69,7 +77,7 @@ com polkit por AÇÃO e capabilities mínimas.
 %{_datadir}/dbus-1/system-services/org.procforge.Helper1.service
 %{_unitdir}/procforged.service
 %{_datadir}/applications/org.procforge.ProcForge.desktop
-%{_datadir}/icons/hicolor/scalable/apps/procforge.svg
+%{_datadir}/icons/hicolor/*/apps/procforge.png
 %{_datadir}/locale/en/LC_MESSAGES/procforge.mo
 
 %changelog
