@@ -1,5 +1,5 @@
 Name:           procforge
-Version:        0.1.0
+Version:        0.1.1
 Release:        1%{?dist}
 Summary:        Clone do Process Hacker para Linux — manipulação ativa de processos, memória e sistema
 
@@ -81,6 +81,10 @@ gtk-update-icon-cache %{_datadir}/icons/hicolor &>/dev/null || :
 %{_datadir}/locale/en/LC_MESSAGES/procforge.mo
 
 %changelog
+* Fri Aug 14 2026 Gabriel (kxinha) <gabriel17166@gmail.com> - 0.1.1-1
+- Ícone definitivo do app (monitor/EKG) em PNG nos tamanhos do tema hicolor;
+  atualização do cache de ícones no pós-instalação.
+
 * Fri Aug 14 2026 Gabriel (kxinha) <gabriel17166@gmail.com> - 0.1.0-1
 - Primeira versão empacotada: lista de processos, manipulação, scanner de memória,
   injeção, cgroup-bisturi, eBPF, namespaces, cn_proc, janelas KWin, temas e i18n.
