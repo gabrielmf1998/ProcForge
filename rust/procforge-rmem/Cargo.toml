@@ -1,0 +1,13 @@
+[package]
+name = "procforge-rmem"
+version = "0.1.0"
+edition = "2021"
+description = "Núcleo de leitura/escrita de memória de outro processo (process_vm_readv/writev) em Rust, linkado no helper procforged."
+
+[lib]
+crate-type = ["staticlib"]
+
+# no_std + panic=abort: staticlib mínima, sem runtime Rust, linka direto no C++.
+[profile.release]
+panic = "abort"
+opt-level = 2

@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE policyconfig PUBLIC
+ "-//freedesktop//DTD PolicyKit Policy Configuration 1.0//EN"
+ "http://www.freedesktop.org/standards/PolicyKit/1.0/policyconfig.dtd">
+<!--
+  Política polkit do ProcForge — GRANULAR POR PODER. Cada capacidade do helper
+  privilegiado é uma action distinta, para que se possa liberar "ler memória"
+  sem liberar "injetar biblioteca". Instalar em:
+  /usr/share/polkit-1/actions/org.procforge.helper.policy   (Fase 1)
+-->
+<policyconfig>
+  <vendor>ProcForge</vendor>
+  <vendor_url>https://github.com/</vendor_url>
+
+  <action id="org.procforge.signal.other">
+    <description>Enviar sinal a processo de outro usuário</description>
+    <message>Autenticação necessária para enviar sinal a processo de outro usuário</message>
+    <defaults>
+      <allow_any>no</allow_any><allow_inactive>no</allow_inactive>
+      <allow_active>auth_admin</allow_active>
+    </defaults>
+  </action>
+
+  <action id="org.procforge.renice.raise">
+    <description>Aumentar prioridade (nice negativo) ou trocar escalonador</description>
+    <message>Autenticação necessária para elevar a prioridade de um processo</message>
+    <defaults>
+      <allow_any>no</allow_any><allow_inactive>no</allow_inactive>
+      <allow_active>auth_admin</allow_active>
+    </defaults>
+  </action>
+
+  <action id="org.procforge.sched.realtime">
+    <description>Definir política de tempo real (SCHED_FIFO/RR)</description>
+    <message>Autenticação necessária para colocar um processo em tempo real</message>
+    <defaults>
+      <allow_any>no</allow_any><allow_inactive>no</allow_inactive>
+      <allow_active>auth_admin</allow_active>
+    </defaults>
+  </action>
+
+  <action id="org.procforge.affinity.other">
+    <description>Definir afinidade de CPU de processo alheio</description>
+    <message>Autenticação necessária para alterar a afinidade de processo alheio</message>
+    <defaults>
+      <allow_any>no</allow_any><allow_inactive>no</allow_inactive>
+      <allow_active>auth_admin</allow_active>
+    </defaults>
+  </action>
+
+  <action id="org.procforge.prlimit.set">
+    <description>Alterar limites (rlimit) de um processo já rodando</description>
+    <message>Autenticação necessária para alterar os limites de um processo</message>
+    <defaults>
+      <allow_any>no</allow_any><allow_inactive>no</allow_inactive>
+      <allow_active>auth_admin</allow_active>
+    </defaults>
+  </action>
+
+  <action id="org.procforge.fd.read.other">
+    <description>Ler descritores de arquivo de processo alheio</description>
+    <message>Autenticação necessária para inspecionar descritores de processo alheio</message>
+    <defaults>
+      <allow_any>no</allow_any><allow_inactive>no</allow_inactive>
+      <allow_active>auth_admin_keep</allow_active>
+    </defaults>
+  </action>
+
+  <action id="org.procforge.fd.close">
+    <description>Injetar close() em processo alheio (liberar trava)</description>
+    <message>Autenticação necessária para fechar um descritor de outro processo</message>
+    <defaults>
+      <allow_any>no</allow_any><allow_inactive>no</allow_inactive>
+      <allow_active>auth_admin</allow_active>
+    </defaults>
+  </action>
+
+  <action id="org.procforge.mem.read">
+    <description>Ler a memória de outro processo</description>
+    <message>Autenticação necessária para ler a memória de outro processo</message>
+    <defaults>
+      <allow_any>no</allow_any><allow_inactive>no</allow_inactive>
+      <allow_active>auth_admin_keep</allow_active>
+    </defaults>
+  </action>
+
+  <action id="org.procforge.mem.write">
+    <description>Escrever na memória de outro processo</description>
+    <message>Autenticação necessária para ESCREVER na memória de outro processo</message>
+    <defaults>
+      <allow_any>no</allow_any><allow_inactive>no</allow_inactive>
+      <allow_active>auth_admin</allow_active>
+    </defaults>
+  </action>
+
+  <action id="org.procforge.inject.library">
+    <description>Injetar biblioteca (dlopen forçado) em outro processo</description>
+    <message>Autenticação necessária para INJETAR uma biblioteca em outro processo</message>
+    <defaults>
+      <allow_any>no</allow_any><allow_inactive>no</allow_inactive>
+      <allow_active>auth_admin</allow_active>
+    </defaults>
+  </action>
+
+  <action id="org.procforge.cgroup.move">
+    <description>Mover processo entre cgroups / aplicar limites</description>
+    <message>Autenticação necessária para mover/limitar via cgroup</message>
+    <defaults>
+      <allow_any>no</allow_any><allow_inactive>no</allow_inactive>
+      <allow_active>auth_admin_keep</allow_active>
+    </defaults>
+  </action>
+
+  <action id="org.procforge.ns.enter">
+    <description>Executar processo dentro do namespace de outro (nsenter)</description>
+    <message>Autenticação necessária para entrar no namespace de outro processo</message>
+    <defaults>
+      <allow_any>no</allow_any><allow_inactive>no</allow_inactive>
+      <allow_active>auth_admin</allow_active>
+    </defaults>
+  </action>
+
+  <action id="org.procforge.ebpf.trace">
+    <description>Rastrear um processo com eBPF (bpftrace)</description>
+    <message>Autenticação necessária para rastrear um processo com eBPF</message>
+    <defaults>
+      <allow_any>no</allow_any><allow_inactive>no</allow_inactive>
+      <allow_active>auth_admin_keep</allow_active>
+    </defaults>
+  </action>
+</policyconfig>

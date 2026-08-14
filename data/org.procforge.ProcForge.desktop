@@ -1,0 +1,13 @@
+[Desktop Entry]
+Type=Application
+Name=ProcForge
+GenericName=Gerenciador de processos
+GenericName[en]=Process manager
+Comment=Manipulação ativa de processos, memória e sistema (inspirado no Process Hacker)
+Comment[en]=Active manipulation of processes, memory and the system (inspired by Process Hacker)
+Exec=procforge
+Icon=procforge
+Terminal=false
+Categories=System;Monitor;Qt;
+Keywords=process;task;manager;memory;scanner;hacker;system;monitor;
+StartupNotify=true

@@ -1,0 +1,5 @@
+<RCC>
+  <qresource prefix="/">
+    <file alias="procforge.svg">data/procforge.svg</file>
+  </qresource>
+</RCC>

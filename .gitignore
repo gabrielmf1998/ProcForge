@@ -1,0 +1,21 @@
+# Build
+/build/
+/dist/
+rust/*/target/
+*.o
+*.a
+
+# Traduções compiladas (o fonte .po é versionado; .mo é gerado)
+*.mo
+po/*.pot
+po/clean.pot
+
+# Logs / temporários
+*.log
+*~
+.cache/
+
+# RPM build
+/rpmbuild/
+*.rpm
+*.tar.gz

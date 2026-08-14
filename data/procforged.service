@@ -1,0 +1,34 @@
+[Unit]
+Description=ProcForge — helper privilegiado (D-Bus)
+Documentation=https://github.com/gabrielmf1998/ProcForge
+
+[Service]
+Type=dbus
+BusName=org.procforge.Helper1
+ExecStart=/usr/libexec/procforged
+User=root
+
+# --- Hardening: caps mínimas para as ações da Fase 1 ---
+# CAP_KILL: sinal cross-uid; CAP_SYS_NICE: renice negativo / afinidade alheia.
+# (CAP_SYS_PTRACE/RESOURCE/DAC_OVERRIDE ficam prontos para as próximas fases.)
+NoNewPrivileges=yes
+# CAP_SYS_PTRACE: injeção dlopen; CAP_SYS_ADMIN: migração de cgroups + setns;
+# CAP_NET_ADMIN: conector de processos (cn_proc, eventos fork/exec/exit em push).
+CapabilityBoundingSet=CAP_KILL CAP_SYS_NICE CAP_SYS_PTRACE CAP_SYS_RESOURCE CAP_DAC_OVERRIDE CAP_SYS_ADMIN CAP_NET_ADMIN
+AmbientCapabilities=CAP_KILL CAP_SYS_NICE
+ProtectSystem=strict
+ProtectControlGroups=no
+ProtectHome=yes
+PrivateTmp=yes
+# guarda a origem do cgroup do alvo p/ desfazer o throttle (systemd cria /run/procforge)
+RuntimeDirectory=procforge
+# AF_NETLINK/INET: ferramentas de rede (ip/ss) rodadas dentro de namespaces + eBPF.
+RestrictAddressFamilies=AF_UNIX AF_NETLINK AF_INET AF_INET6
+RestrictNamespaces=yes
+LockPersonality=yes
+SystemCallArchitectures=native
+SystemCallFilter=@system-service
+# process_vm_* (Read/WriteMem); ptrace (injeção); setns (nsenter); bpf/perf_event_open (eBPF).
+SystemCallFilter=process_vm_readv process_vm_writev ptrace setns bpf perf_event_open
+SystemCallErrorNumber=EPERM
+RestrictRealtime=no

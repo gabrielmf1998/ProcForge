@@ -1,0 +1,1043 @@
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"Language: en\n"
+
+msgid "Executando"
+msgstr "Running"
+
+msgid "Dormindo"
+msgstr "Sleeping"
+
+msgid "Espera ininterrupta (D)"
+msgstr "Uninterruptible sleep (D)"
+
+msgid "Zumbi"
+msgstr "Zombie"
+
+msgid "Parado (stopped)"
+msgstr "Stopped"
+
+msgid "Rastreado (traced)"
+msgstr "Traced"
+
+msgid "Morto"
+msgstr "Dead"
+
+msgid "Ocioso (kernel)"
+msgstr "Idle (kernel)"
+
+msgid "Nome"
+msgstr "Name"
+
+msgid "PID"
+msgstr "PID"
+
+msgid "CPU"
+msgstr "CPU"
+
+msgid "I/O total"
+msgstr "I/O total"
+
+msgid "Bytes privados"
+msgstr "Private bytes"
+
+msgid "Usuário"
+msgstr "User"
+
+msgid "Descrição"
+msgstr "Description"
+
+msgid "O processo %1 não existe mais."
+msgstr "Process %1 no longer exists."
+
+msgid "O PID %1 foi reutilizado por outro processo."
+msgstr "PID %1 was reused by another process."
+
+msgid "Falha ao enviar sinal: %1"
+msgstr "Failed to send signal: %1"
+
+msgid "Recusado: não vou matar o PID %1."
+msgstr "Refused: I won't kill PID %1."
+
+msgid "%1 processo(s) da árvore encerrado(s)."
+msgstr "%1 process(es) of the tree terminated."
+
+msgid "Falha ao ajustar prioridade (nice %1): %2"
+msgstr "Failed to set priority (nice %1): %2"
+
+msgid "Selecione ao menos uma CPU."
+msgstr "Select at least one CPU."
+
+msgid "Falha ao definir afinidade: %1"
+msgstr "Failed to set affinity: %1"
+
+msgid "Falha ao definir escalonador: %1"
+msgstr "Failed to set scheduler: %1"
+
+msgid "Falha ao definir prioridade de I/O: %1"
+msgstr "Failed to set I/O priority: %1"
+
+msgid "Falha ao definir limite: %1"
+msgstr "Failed to set limit: %1"
+
+msgid "Alvo inválido."
+msgstr "Invalid target."
+
+msgid "PTRACE_SEIZE falhou: %1"
+msgstr "PTRACE_SEIZE failed: %1"
+
+msgid "PTRACE_INTERRUPT falhou: %1"
+msgstr "PTRACE_INTERRUPT failed: %1"
+
+msgid "O alvo não parou como esperado."
+msgstr "The target did not stop as expected."
+
+msgid "GETREGSET falhou: %1"
+msgstr "GETREGSET failed: %1"
+
+msgid "PEEKTEXT falhou: %1"
+msgstr "PEEKTEXT failed: %1"
+
+msgid "POKETEXT falhou: %1"
+msgstr "POKETEXT failed: %1"
+
+msgid "SETREGSET falhou: %1"
+msgstr "SETREGSET failed: %1"
+
+msgid "SINGLESTEP falhou: %1"
+msgstr "SINGLESTEP failed: %1"
+
+msgid "close() no alvo falhou: %1"
+msgstr "close() in target failed: %1"
+
+msgid "pidfd_open falhou: %1"
+msgstr "pidfd_open failed: %1"
+
+msgid "pidfd_getfd falhou: %1"
+msgstr "pidfd_getfd failed: %1"
+
+msgid "FD"
+msgstr "FD"
+
+msgid "Tipo"
+msgstr "Type"
+
+msgid "Alvo"
+msgstr "Target"
+
+msgid "Flags"
+msgstr "Flags"
+
+msgid "Base"
+msgstr "Base"
+
+msgid "Perms"
+msgstr "Perms"
+
+msgid "Offset"
+msgstr "Offset"
+
+msgid "Tamanho"
+msgstr "Size"
+
+msgid "Arquivo mapeado"
+msgstr "Mapped file"
+
+msgid "Nenhum processo selecionado"
+msgstr "No process selected"
+
+msgid "Atualizar"
+msgstr "Refresh"
+
+msgid "Fechar no dono"
+msgstr "Close in owner"
+
+msgid "Injeta close() no processo alvo (libera a trava)."
+msgstr "Injects close() into the target process (releases the lock)."
+
+msgid "Duplicar p/ mim"
+msgstr "Duplicate to me"
+
+msgid "Copia o fd para este processo via pidfd_getfd."
+msgstr "Copies the fd into this process via pidfd_getfd."
+
+msgid "Descritores"
+msgstr "Descriptors"
+
+msgid "Só bibliotecas (.so)"
+msgstr "Libraries only (.so)"
+
+msgid "Bibliotecas / Mapas"
+msgstr "Libraries / Maps"
+
+msgid "%1 (PID %2)"
+msgstr "%1 (PID %2)"
+
+msgid "Selecione um descritor primeiro."
+msgstr "Select a descriptor first."
+
+msgid "Injetar close(%1) no processo %2 (%3)?\n\nAlvo: %4\n\nIsto libera a trava mantida por este fd (lockfile, socket do singleton, eventfd) sem matar o processo. A operação usa ptrace."
+msgstr "Inject close(%1) into process %2 (%3)?\n\nTarget: %4\n\nThis releases the lock held by this fd (lockfile, singleton socket, eventfd) without killing the process. The operation uses ptrace."
+
+msgid "Fechar descritor alheio"
+msgstr "Close another process's descriptor"
+
+msgid "close(%1) executado no alvo (retorno %2)."
+msgstr "close(%1) executed in target (return %2)."
+
+msgid "fd %1 duplicado para nós via pidfd_getfd (fd local %2). O fd do dono continua aberto."
+msgstr "fd %1 duplicated to us via pidfd_getfd (local fd %2). The owner's fd stays open."
+
+msgid "Scanner de memória — %1 (PID %2)"
+msgstr "Memory scanner — %1 (PID %2)"
+
+msgid "Tipo:"
+msgstr "Type:"
+
+msgid "Valor:"
+msgstr "Value:"
+
+msgid "Primeira busca"
+msgstr "First scan"
+
+msgid "= valor"
+msgstr "= value"
+
+msgid "mudou"
+msgstr "changed"
+
+msgid "não mudou"
+msgstr "unchanged"
+
+msgid "aumentou"
+msgstr "increased"
+
+msgid "diminuiu"
+msgstr "decreased"
+
+msgid "> valor"
+msgstr "> value"
+
+msgid "< valor"
+msgstr "< value"
+
+msgid "Refinar"
+msgstr "Refine"
+
+msgid "Nova busca"
+msgstr "New scan"
+
+msgid "0 resultados"
+msgstr "0 results"
+
+msgid "Endereço"
+msgstr "Address"
+
+msgid "Valor"
+msgstr "Value"
+
+msgid "Editar valor..."
+msgstr "Edit value..."
+
+msgid "Congelar →"
+msgstr "Freeze →"
+
+msgid "Congelados (reescritos em loop):"
+msgstr "Frozen (rewritten in a loop):"
+
+msgid "Valor travado"
+msgstr "Locked value"
+
+msgid "Descongelar"
+msgstr "Unfreeze"
+
+msgid "Scanner"
+msgstr "Scanner"
+
+msgid "Ler memória"
+msgstr "Read memory"
+
+msgid "Endereço (hex):"
+msgstr "Address (hex):"
+
+msgid "Bytes:"
+msgstr "Bytes:"
+
+msgid "Ler"
+msgstr "Read"
+
+msgid "Escrever bytes"
+msgstr "Write bytes"
+
+msgid "Bytes (hex):"
+msgstr "Bytes (hex):"
+
+msgid "Gravar"
+msgstr "Write"
+
+msgid "Memória (hex)"
+msgstr "Memory (hex)"
+
+msgid "Digite um valor para buscar."
+msgstr "Type a value to search for."
+
+msgid "Sem permissão para ler a memória deste processo (uid diferente). A busca direta funciona para processos do seu usuário; varredura cross-uid pelo helper é um passo futuro."
+msgstr "No permission to read this process's memory (different uid). Direct scanning works for your own processes; cross-uid scanning via the helper is a future step."
+
+msgid "Faça a primeira busca antes de refinar."
+msgstr "Do the first scan before refining."
+
+msgid "%1 resultados (mostrando %2)"
+msgstr "%1 results (showing %2)"
+
+msgid "%1+ resultados (truncado — refine mais)"
+msgstr "%1+ results (truncated — refine further)"
+
+msgid "%1 resultados"
+msgstr "%1 results"
+
+msgid "Selecione um resultado."
+msgstr "Select a result."
+
+msgid "Editar valor em 0x%1"
+msgstr "Edit value at 0x%1"
+
+msgid "Novo valor (%1):"
+msgstr "New value (%1):"
+
+msgid "Valor inválido para o tipo %1."
+msgstr "Invalid value for type %1."
+
+msgid "Falha ao escrever na memória (permissão?)."
+msgstr "Failed to write to memory (permission?)."
+
+msgid "Selecione um resultado para congelar."
+msgstr "Select a result to freeze."
+
+msgid "Não consegui ler o valor atual."
+msgstr "Could not read the current value."
+
+msgid "Endereço inválido."
+msgstr "Invalid address."
+
+msgid "<falha ao ler — endereço não mapeado ou sem permissão>"
+msgstr "<failed to read — address not mapped or no permission>"
+
+msgid "Bytes hex inválidos (ex.: de ad be ef)."
+msgstr "Invalid hex bytes (e.g.: de ad be ef)."
+
+msgid "Gravar %1 byte(s) em 0x%2 do processo %3?"
+msgstr "Write %1 byte(s) at 0x%2 of process %3?"
+
+msgid "Escrever na memória"
+msgstr "Write to memory"
+
+msgid "%1 byte(s) gravado(s)."
+msgstr "%1 byte(s) written."
+
+msgid "Falha ao gravar (permissão?)."
+msgstr "Failed to write (permission?)."
+
+msgid "Propriedades — %1 (PID %2)"
+msgstr "Properties — %1 (PID %2)"
+
+msgid "<b>%1</b> (PID %2)"
+msgstr "<b>%1</b> (PID %2)"
+
+msgid "Geral"
+msgstr "General"
+
+msgid "Estatísticas"
+msgstr "Statistics"
+
+msgid "Threads"
+msgstr "Threads"
+
+msgid "Token"
+msgstr "Token"
+
+msgid "Ambiente"
+msgstr "Environment"
+
+msgid "Handles"
+msgstr "Handles"
+
+msgid "Memória"
+msgstr "Memory"
+
+msgid "PID pai"
+msgstr "Parent PID"
+
+msgid "Estado"
+msgstr "State"
+
+msgid "Iniciado"
+msgstr "Started"
+
+msgid "Executável"
+msgstr "Executable"
+
+msgid "Diretório de trabalho"
+msgstr "Working directory"
+
+msgid "Raiz (chroot)"
+msgstr "Root (chroot)"
+
+msgid "Linha de comando"
+msgstr "Command line"
+
+msgid "Nice"
+msgstr "Nice"
+
+msgid "Afinidade de CPU"
+msgstr "CPU affinity"
+
+msgid "Métrica"
+msgstr "Metric"
+
+msgid "TID"
+msgstr "TID"
+
+msgid "Suspender thread"
+msgstr "Suspend thread"
+
+msgid "Retomar thread"
+msgstr "Resume thread"
+
+msgid "real %1 · efetivo %2 · salvo %3 · fs %4"
+msgstr "real %1 · effective %2 · saved %3 · fs %4"
+
+msgid "UID"
+msgstr "UID"
+
+msgid "GID"
+msgstr "GID"
+
+msgid "Grupos"
+msgstr "Groups"
+
+msgid "Capabilities efetivas"
+msgstr "Effective capabilities"
+
+msgid "Capabilities permitidas"
+msgstr "Permitted capabilities"
+
+msgid "Capabilities herdáveis"
+msgstr "Inheritable capabilities"
+
+msgid "Capabilities do bounding set"
+msgstr "Bounding set capabilities"
+
+msgid "Capabilities ambientais"
+msgstr "Ambient capabilities"
+
+msgid "Seccomp"
+msgstr "Seccomp"
+
+msgid "filtro (BPF)"
+msgstr "filter (BPF)"
+
+msgid "estrito"
+msgstr "strict"
+
+msgid "desativado"
+msgstr "disabled"
+
+msgid "NoNewPrivs"
+msgstr "NoNewPrivs"
+
+msgid "sim"
+msgstr "yes"
+
+msgid "não"
+msgstr "no"
+
+msgid "Contexto de segurança"
+msgstr "Security context"
+
+msgid "Variável"
+msgstr "Variable"
+
+msgid "Sem permissão para ler o ambiente (uid diferente)."
+msgstr "No permission to read the environment (different uid)."
+
+msgid "Arquivo"
+msgstr "File"
+
+msgid "Tempo de CPU (usuário)"
+msgstr "CPU time (user)"
+
+msgid "Tempo de CPU (sistema)"
+msgstr "CPU time (system)"
+
+msgid "Memória (RSS)"
+msgstr "Memory (RSS)"
+
+msgid "Memória virtual"
+msgstr "Virtual memory"
+
+msgid "Dados/heap"
+msgstr "Data/heap"
+
+msgid "Pilha"
+msgstr "Stack"
+
+msgid "Swap"
+msgstr "Swap"
+
+msgid "Disco lido"
+msgstr "Disk read"
+
+msgid "Disco escrito"
+msgstr "Disk written"
+
+msgid "Trocas de contexto (voluntárias)"
+msgstr "Context switches (voluntary)"
+
+msgid "Trocas de contexto (involuntárias)"
+msgstr "Context switches (involuntary)"
+
+msgid "  [suspensa]"
+msgstr "  [suspended]"
+
+msgid "Unidade"
+msgstr "Unit"
+
+msgid "Carregada"
+msgstr "Loaded"
+
+msgid "Ativa"
+msgstr "Active"
+
+msgid "Sub"
+msgstr "Sub"
+
+msgid "Ativação"
+msgstr "Startup"
+
+msgid "Iniciar"
+msgstr "Start"
+
+msgid "Parar"
+msgstr "Stop"
+
+msgid "Reiniciar"
+msgstr "Restart"
+
+msgid "Recarregar"
+msgstr "Reload"
+
+msgid "Habilitar (no boot)"
+msgstr "Enable (on boot)"
+
+msgid "Desabilitar (no boot)"
+msgstr "Disable (on boot)"
+
+msgid "Mascarar"
+msgstr "Mask"
+
+msgid "Desmascarar"
+msgstr "Unmask"
+
+msgid "Status / journal..."
+msgstr "Status / journal..."
+
+msgid "Ir para o processo"
+msgstr "Go to process"
+
+msgid "Status — %1"
+msgstr "Status — %1"
+
+msgid "(sem saída)"
+msgstr "(no output)"
+
+msgid "O serviço %1 não tem processo principal em execução."
+msgstr "Service %1 has no running main process."
+
+msgid "Proto"
+msgstr "Proto"
+
+msgid "Local"
+msgstr "Local"
+
+msgid "Remoto"
+msgstr "Remote"
+
+msgid "Processo"
+msgstr "Process"
+
+msgid "Fechar esta conexão (ss -K)"
+msgstr "Close this connection (ss -K)"
+
+msgid "Não consegui montar o filtro da conexão."
+msgstr "Could not build the connection filter."
+
+msgid "Matar processo (SIGTERM)"
+msgstr "Kill process (SIGTERM)"
+
+msgid "Matar processo (SIGKILL)"
+msgstr "Kill process (SIGKILL)"
+
+msgid "Copiar PID"
+msgstr "Copy PID"
+
+msgid "Dispositivo"
+msgstr "Device"
+
+msgid "Leitura/s"
+msgstr "Read/s"
+
+msgid "Escrita/s"
+msgstr "Write/s"
+
+msgid "Lido (total)"
+msgstr "Read (total)"
+
+msgid "Escrito (total)"
+msgstr "Written (total)"
+
+msgid "Helper privilegiado não instalado. Rode: ./install-helper.sh"
+msgstr "Privileged helper not installed. Run: ./install-helper.sh"
+
+msgid "Autorização negada pelo polkit."
+msgstr "Authorization denied by polkit."
+
+msgid "Processos"
+msgstr "Processes"
+
+msgid "Serviços"
+msgstr "Services"
+
+msgid "Rede"
+msgstr "Network"
+
+msgid "Disco"
+msgstr "Disk"
+
+msgid "&Hacker"
+msgstr "&Hacker"
+
+msgid "Executar..."
+msgstr "Run..."
+
+msgid "Localizar handles ou DLLs..."
+msgstr "Find handles or DLLs..."
+
+msgid "Informação do sistema..."
+msgstr "System information..."
+
+msgid "Opções..."
+msgstr "Options..."
+
+msgid "Sair"
+msgstr "Quit"
+
+msgid "&Ver"
+msgstr "&View"
+
+msgid "Intervalo de atualização"
+msgstr "Update interval"
+
+msgid "0,5 s"
+msgstr "0.5 s"
+
+msgid "1 s"
+msgstr "1 s"
+
+msgid "2 s"
+msgstr "2 s"
+
+msgid "5 s"
+msgstr "5 s"
+
+msgid "Expandir tudo"
+msgstr "Expand all"
+
+msgid "Recolher tudo"
+msgstr "Collapse all"
+
+msgid "Tema"
+msgstr "Theme"
+
+msgid "Sistema (Breeze)"
+msgstr "System (Breeze)"
+
+msgid "Claro"
+msgstr "Light"
+
+msgid "Escuro"
+msgstr "Dark"
+
+msgid "Clássico (Process Hacker)"
+msgstr "Classic (Process Hacker)"
+
+msgid "Idioma / Language"
+msgstr "Language / Idioma"
+
+msgid "Automático (sistema)"
+msgstr "Automatic (system)"
+
+msgid "O idioma muda ao reiniciar o ProcForge. Reiniciar agora?"
+msgstr "The language changes when ProcForge restarts. Restart now?"
+
+msgid "Idioma"
+msgstr "Language"
+
+msgid "&Ferramentas"
+msgstr "&Tools"
+
+msgid "Scanner de memória..."
+msgstr "Memory scanner..."
+
+msgid "Injetar biblioteca (.so)..."
+msgstr "Inject library (.so)..."
+
+msgid "Rastrear com eBPF..."
+msgstr "Trace with eBPF..."
+
+msgid "Namespaces / containers..."
+msgstr "Namespaces / containers..."
+
+msgid "Limitar recursos (cgroup)..."
+msgstr "Limit resources (cgroup)..."
+
+msgid "Escalonamento avançado..."
+msgstr "Advanced scheduling..."
+
+msgid "&Usuários"
+msgstr "&Users"
+
+msgid "Aj&uda"
+msgstr "&Help"
+
+msgid "Sobre o ProcForge"
+msgstr "About ProcForge"
+
+msgid "Principal"
+msgstr "Main"
+
+msgid "Opções"
+msgstr "Options"
+
+msgid "Localizar handles ou DLLs"
+msgstr "Find handles or DLLs"
+
+msgid "Informação do sistema"
+msgstr "System information"
+
+msgid "Terminar"
+msgstr "Terminate"
+
+msgid "Terminar o processo selecionado (SIGTERM)"
+msgstr "Terminate the selected process (SIGTERM)"
+
+msgid "Buscar processos (Ctrl+K)"
+msgstr "Search processes (Ctrl+K)"
+
+msgid "Processo %1 não está na lista."
+msgstr "Process %1 is not in the list."
+
+msgid "CPU: %1%"
+msgstr "CPU: %1%"
+
+msgid "Memória física: %1 (%2%)"
+msgstr "Physical memory: %1 (%2%)"
+
+msgid "Processos: %1"
+msgstr "Processes: %1"
+
+msgid "(sem dados)"
+msgstr "(no data)"
+
+msgid "%1  (%2 processos)"
+msgstr "%1  (%2 processes)"
+
+msgid "Executar"
+msgstr "Run"
+
+msgid "Programa e argumentos:"
+msgstr "Program and arguments:"
+
+msgid "Não consegui iniciar: %1"
+msgstr "Could not start: %1"
+
+msgid "Buscar em fds e bibliotecas mapeadas (nome de arquivo, socket:[inode], .so):"
+msgstr "Search fds and mapped libraries (file name, socket:[inode], .so):"
+
+msgid "Resultados para \"%1\""
+msgstr "Results for \"%1\""
+
+msgid "fd %1 (%2)"
+msgstr "fd %1 (%2)"
+
+msgid "mapa"
+msgstr "map"
+
+msgid "%1 resultado(s) para \"%2\""
+msgstr "%1 result(s) for \"%2\""
+
+msgid "Kernel: %1\nDistribuição: %2\nCPU: %3 (%4 núcleos)\nMemória: %5 usada de %6\nCarga (1/5/15 min): %7\nUptime: %8"
+msgstr "Kernel: %1\nDistribution: %2\nCPU: %3 (%4 cores)\nMemory: %5 used of %6\nLoad (1/5/15 min): %7\nUptime: %8"
+
+msgid "ProcForge — clone do Process Hacker para Linux.\n\nManipulação ativa do sistema sobre primitivas nativas: procfs, pidfd, ptrace, process_vm_readv/writev, cgroups v2, netlink, eBPF, KWin, com helper D-Bus privilegiado e polkit por ação.\n\nQt6 · KDE Frameworks 6 · Wayland."
+msgstr "ProcForge — a Process Hacker clone for Linux.\n\nActive system manipulation over native primitives: procfs, pidfd, ptrace, process_vm_readv/writev, cgroups v2, netlink, eBPF, KWin, with a privileged D-Bus helper and per-action polkit.\n\nQt6 · KDE Frameworks 6 · Wayland."
+
+msgid "Intervalo de atualização:"
+msgstr "Update interval:"
+
+msgid "Atualização em tempo real (eventos cn_proc via helper)"
+msgstr "Real-time updates (cn_proc events via helper)"
+
+msgid "Tema:"
+msgstr "Theme:"
+
+msgid "Idioma / Language:"
+msgstr "Language / Idioma:"
+
+msgid "Propriedades..."
+msgstr "Properties..."
+
+msgid "Enviar sinal"
+msgstr "Send signal"
+
+msgid "Suspender (STOP)"
+msgstr "Suspend (STOP)"
+
+msgid "Retomar (CONT)"
+msgstr "Resume (CONT)"
+
+msgid "Matar árvore inteira"
+msgstr "Kill entire tree"
+
+msgid "Prioridade (nice)..."
+msgstr "Priority (nice)..."
+
+msgid "Afinidade de CPU..."
+msgstr "CPU affinity..."
+
+msgid "Limites (prlimit)..."
+msgstr "Limits (prlimit)..."
+
+msgid "Threads (suspender/retomar)..."
+msgstr "Threads (suspend/resume)..."
+
+msgid "Janela"
+msgstr "Window"
+
+msgid "Trazer para frente"
+msgstr "Bring to front"
+
+msgid "Minimizar"
+msgstr "Minimize"
+
+msgid "Restaurar"
+msgstr "Restore"
+
+msgid "Fechar janela"
+msgstr "Close window"
+
+msgid "Remover limites (cgroup)"
+msgstr "Remove limits (cgroup)"
+
+msgid "Matar %1 (PID %2) e TODA a sua descendência com SIGKILL?"
+msgstr "Kill %1 (PID %2) and ALL its descendants with SIGKILL?"
+
+msgid "Matar árvore"
+msgstr "Kill tree"
+
+msgid "Prioridade de %1 (PID %2)"
+msgstr "Priority of %1 (PID %2)"
+
+msgid "nice (-20 = mais prioritário, 19 = menos):"
+msgstr "nice (-20 = highest priority, 19 = lowest):"
+
+msgid "Afinidade de CPU — %1 (PID %2)"
+msgstr "CPU affinity — %1 (PID %2)"
+
+msgid "CPUs permitidas"
+msgstr "Allowed CPUs"
+
+msgid "CPU %1"
+msgstr "CPU %1"
+
+msgid "Escolher biblioteca para injetar"
+msgstr "Choose a library to inject"
+
+msgid "Bibliotecas compartilhadas (*.so *.so.*)"
+msgstr "Shared libraries (*.so *.so.*)"
+
+msgid "Injetar '%1' em %2 (PID %3) forçando dlopen via ptrace?\n\nIsto EXECUTA CÓDIGO dentro do processo alvo e pode travá-lo se a biblioteca for incompatível. Use só em processos que você controla."
+msgstr "Inject '%1' into %2 (PID %3) forcing dlopen via ptrace?\n\nThis EXECUTES CODE inside the target process and may crash it if the library is incompatible. Use only on processes you control."
+
+msgid "Injetar biblioteca"
+msgstr "Inject library"
+
+msgid "Injetar"
+msgstr "Inject"
+
+msgid "Biblioteca injetada (handle 0x%1)."
+msgstr "Library injected (handle 0x%1)."
+
+msgid "Biblioteca injetada via helper."
+msgstr "Library injected via helper."
+
+msgid "Limitar recursos — %1 (PID %2)"
+msgstr "Limit resources — %1 (PID %2)"
+
+msgid " % de um núcleo (0 = sem limite)"
+msgstr " % of one core (0 = no limit)"
+
+msgid "CPU:"
+msgstr "CPU:"
+
+msgid " MB (0 = sem limite)"
+msgstr " MB (0 = no limit)"
+
+msgid "Memória máx.:"
+msgstr "Max memory:"
+
+msgid "sem limite"
+msgstr "no limit"
+
+msgid "Máx. de PIDs:"
+msgstr "Max PIDs:"
+
+msgid " MB/s (0 = sem limite)"
+msgstr " MB/s (0 = no limit)"
+
+msgid "Máx. I/O de disco:"
+msgstr "Max disk I/O:"
+
+msgid "Limites aplicados a %1 (PID %2) via cgroup."
+msgstr "Limits applied to %1 (PID %2) via cgroup."
+
+msgid "Limites removidos de %1 (PID %2)."
+msgstr "Limits removed from %1 (PID %2)."
+
+msgid "Escalonamento — %1 (PID %2)"
+msgstr "Scheduling — %1 (PID %2)"
+
+msgid "Normal (OTHER)"
+msgstr "Normal (OTHER)"
+
+msgid "Batch"
+msgstr "Batch"
+
+msgid "Ocioso (IDLE)"
+msgstr "Idle (IDLE)"
+
+msgid "Tempo real FIFO"
+msgstr "Real time FIFO"
+
+msgid "Tempo real RR"
+msgstr "Real time RR"
+
+msgid "Política:"
+msgstr "Policy:"
+
+msgid "Prioridade RT (FIFO/RR):"
+msgstr "RT priority (FIFO/RR):"
+
+msgid "I/O: Nenhuma"
+msgstr "I/O: None"
+
+msgid "I/O: Tempo real"
+msgstr "I/O: Real time"
+
+msgid "I/O: Melhor esforço"
+msgstr "I/O: Best effort"
+
+msgid "I/O: Ocioso"
+msgstr "I/O: Idle"
+
+msgid "Classe de I/O:"
+msgstr "I/O class:"
+
+msgid "Prioridade de I/O (0-7):"
+msgstr "I/O priority (0-7):"
+
+msgid "Escalonamento aplicado a %1."
+msgstr "Scheduling applied to %1."
+
+msgid "Limites (prlimit) — %1 (PID %2)"
+msgstr "Limits (prlimit) — %1 (PID %2)"
+
+msgid "Recurso:"
+msgstr "Resource:"
+
+msgid "Soft ('ilimitado' ou número):"
+msgstr "Soft ('unlimited' or number):"
+
+msgid "Hard ('ilimitado' ou número):"
+msgstr "Hard ('unlimited' or number):"
+
+msgid "Limite aplicado a %1."
+msgstr "Limit applied to %1."
+
+msgid "Suspender uma thread isolada é suportado apenas para processos do seu usuário (o tracer ptrace vive dentro da GUI)."
+msgstr "Suspending an individual thread is supported only for your own processes (the ptrace tracer lives inside the GUI)."
+
+msgid "Threads — %1 (PID %2)"
+msgstr "Threads — %1 (PID %2)"
+
+msgid "Suspensa"
+msgstr "Suspended"
+
+msgid "Namespaces — %1 (PID %2)"
+msgstr "Namespaces — %1 (PID %2)"
+
+msgid "Namespace"
+msgstr "Namespace"
+
+msgid "Inode"
+msgstr "Inode"
+
+msgid "Compartilhado com você?"
+msgstr "Shared with you?"
+
+msgid "NÃO (isolado)"
+msgstr "NO (isolated)"
+
+msgid "Isolado em %1 namespace(s) — provável container/sandbox."
+msgstr "Isolated in %1 namespace(s) — likely container/sandbox."
+
+msgid "Compartilha todos os namespaces com você (mesmo ambiente)."
+msgstr "Shares all namespaces with you (same environment)."
+
+msgid "Rodar dentro (mnt/net/ipc/uts/cgroup):"
+msgstr "Run inside (mnt/net/ipc/uts/cgroup):"
+
+msgid "executando (via helper, com polkit)..."
+msgstr "running (via helper, with polkit)..."
+
+msgid "Erro: %1"
+msgstr "Error: %1"
+
+msgid "Rastreamento eBPF — %1 (PID %2)"
+msgstr "eBPF tracing — %1 (PID %2)"
+
+msgid "Syscalls (contagem)"
+msgstr "Syscalls (count)"
+
+msgid "Arquivos abertos"
+msgstr "Open files"
+
+msgid "Conexões TCP"
+msgstr "TCP connections"
+
+msgid "Modo:"
+msgstr "Mode:"
+
+msgid " s"
+msgstr " s"
+
+msgid "Duração:"
+msgstr "Duration:"
+
+msgid "Rastrear"
+msgstr "Trace"
+
+msgid "rastreando %1 s com eBPF (roda no helper como root)..."
+msgstr "tracing %1 s with eBPF (runs in the helper as root)..."
+
