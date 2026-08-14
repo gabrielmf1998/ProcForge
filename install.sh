@@ -79,8 +79,22 @@ info "Instalando a GUI em $PREFIX (sem root)…"
 install -Dm755 "$SRC/build/procforge"                    "$PREFIX/bin/procforge"
 install -Dm644 "$SRC/data/org.procforge.ProcForge.desktop" "$PREFIX/share/applications/org.procforge.ProcForge.desktop"
 install -Dm644 "$SRC/data/procforge.svg"                 "$PREFIX/share/icons/hicolor/scalable/apps/procforge.svg"
+# O hicolor do usuário precisa de um index.theme, senão o gtk-update-icon-cache
+# falha ("No theme index file"). ATENÇÃO: ele tem precedência sobre o
+# /usr/share/icons/hicolor, então precisa ser o índice COMPLETO do sistema —
+# um índice mínimo sombreia o do sistema e quebra os ícones do desktop inteiro.
+if [ ! -f "$PREFIX/share/icons/hicolor/index.theme" ] \
+   && [ -f /usr/share/icons/hicolor/index.theme ]; then
+    cp /usr/share/icons/hicolor/index.theme "$PREFIX/share/icons/hicolor/index.theme"
+fi
 update-desktop-database "$PREFIX/share/applications" >/dev/null 2>&1 || true
-gtk-update-icon-cache "$PREFIX/share/icons/hicolor" >/dev/null 2>&1 || true
+gtk-update-icon-cache -f -t "$PREFIX/share/icons/hicolor" >/dev/null 2>&1 || true
+# o menu do KDE só enxerga o .desktop depois que o ksycoca é reconstruído
+if command -v kbuildsycoca6 >/dev/null 2>&1; then
+    kbuildsycoca6 --noincremental >/dev/null 2>&1 || true
+elif command -v kbuildsycoca5 >/dev/null 2>&1; then
+    kbuildsycoca5 --noincremental >/dev/null 2>&1 || true
+fi
 # traduções (en_US); pt-BR é o idioma base
 [ -x "$SRC/build-i18n.sh" ] && bash "$SRC/build-i18n.sh" >/dev/null 2>&1 && ok "traduções instaladas" || true
 ok "GUI instalada em $PREFIX/bin/procforge"

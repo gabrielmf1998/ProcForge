@@ -22,6 +22,7 @@ Requires:       kf6-kcoreaddons
 Requires:       kf6-ki18n
 Requires:       kf6-kwidgetsaddons
 Requires:       polkit
+Requires:       hicolor-icon-theme
 # Recomendados para funcionalidades específicas (eBPF, rede, namespaces, token, janelas):
 Recommends:     bpftrace
 Recommends:     iproute
