@@ -44,6 +44,7 @@ private:
     void     copyPidCurrent();
     // barra de ferramentas / menus estilo Process Hacker
     void     runCommand();
+    void     runAsDialog();   // "Executar como…" (novo processo via helper)
     void     findHandlesOrDlls();
     void     systemInformation();
     void     aboutDialog();

@@ -3,6 +3,7 @@
 #include "ProcConnector.h"
 #include "core/Procfs.h"
 #include "inject/LibraryInjector.h"
+#include "inject/RemoteMem.h"
 
 #include <QDBusConnection>
 #include <QDBusMessage>
@@ -25,8 +26,11 @@
 #include <sys/syscall.h>
 #include <sys/uio.h>
 #include <sys/stat.h>
+#include <sys/mman.h>
 #include <syslog.h>
 #include <cstdint>
+#include <pwd.h>
+#include <grp.h>
 
 #ifdef PROCFORGE_HAVE_RUST
 // Núcleo de memória portado para Rust (rust/procforge-rmem), linkado estático.
@@ -296,6 +300,150 @@ void Helper::InjectLibrary(uint pid, qulonglong starttime, const QString &path)
         return;
     }
     audit(QStringLiteral("InjectLibrary(%1)").arg(path), pid, QStringLiteral("ok"));
+}
+
+// ---- manipulação de páginas de memória (mmap/mprotect/munmap) ----
+// Um só direito: "mexer no mapa de memória alheio" cobre alocar/proteger/liberar.
+
+qulonglong Helper::AllocMem(uint pid, qulonglong starttime, qulonglong length, int prot)
+{
+    if (!authorize(QStringLiteral("org.procforge.mem.map"))) return 0;
+    if (!identityOk(pid, starttime)) return 0;
+    if (length == 0 || length > 1ull << 32) {
+        sendErrorReply(QDBusError::InvalidArgs, QStringLiteral("Tamanho inválido."));
+        return 0;
+    }
+    const inject::MemResult r = inject::remoteMmap(static_cast<int>(pid), length, prot);
+    if (!r.ok) {
+        audit(QStringLiteral("AllocMem"), pid, QStringLiteral("fail"));
+        sendErrorReply(QDBusError::Failed, r.error);
+        return 0;
+    }
+    audit(QStringLiteral("AllocMem(len=%1 prot=%2)@0x%3").arg(length).arg(prot).arg(r.ret, 0, 16),
+          pid, QStringLiteral("ok"));
+    return r.ret;
+}
+
+void Helper::ProtectMem(uint pid, qulonglong starttime, qulonglong addr,
+                        qulonglong length, int prot)
+{
+    if (!authorize(QStringLiteral("org.procforge.mem.map"))) return;
+    if (!identityOk(pid, starttime)) return;
+    const inject::MemResult r = inject::remoteMprotect(static_cast<int>(pid), addr, length, prot);
+    if (!r.ok) {
+        audit(QStringLiteral("ProtectMem"), pid, QStringLiteral("fail"));
+        sendErrorReply(QDBusError::Failed, r.error);
+        return;
+    }
+    audit(QStringLiteral("ProtectMem(0x%1 len=%2 prot=%3)").arg(addr, 0, 16).arg(length).arg(prot),
+          pid, QStringLiteral("ok"));
+}
+
+void Helper::FreeMem(uint pid, qulonglong starttime, qulonglong addr, qulonglong length)
+{
+    if (!authorize(QStringLiteral("org.procforge.mem.map"))) return;
+    if (!identityOk(pid, starttime)) return;
+    const inject::MemResult r = inject::remoteMunmap(static_cast<int>(pid), addr, length);
+    if (!r.ok) {
+        audit(QStringLiteral("FreeMem"), pid, QStringLiteral("fail"));
+        sendErrorReply(QDBusError::Failed, r.error);
+        return;
+    }
+    audit(QStringLiteral("FreeMem(0x%1 len=%2)").arg(addr, 0, 16).arg(length), pid, QStringLiteral("ok"));
+}
+
+// ---- "Executar como…": criar um novo processo (Run as) ----
+QString Helper::LaunchProcess(const QString &program, const QStringList &args,
+                              const QString &username, const QString &cwd,
+                              int nice, const QList<uint> &affinity)
+{
+    if (!authorize(QStringLiteral("org.procforge.process.launch"))) return {};
+    if (program.trimmed().isEmpty()) {
+        sendErrorReply(QDBusError::InvalidArgs, QStringLiteral("Programa vazio."));
+        return {};
+    }
+
+    // Resolve o usuário-alvo (vazio => root).
+    uid_t uid = 0; gid_t gid = 0; QByteArray uname("root"), home("/");
+    if (!username.trimmed().isEmpty()) {
+        const struct passwd *pw = ::getpwnam(username.toLocal8Bit().constData());
+        if (!pw) {
+            sendErrorReply(QDBusError::InvalidArgs, QStringLiteral("Usuário desconhecido: %1").arg(username));
+            return {};
+        }
+        uid = pw->pw_uid; gid = pw->pw_gid;
+        uname = pw->pw_name; home = pw->pw_dir;
+    }
+
+    // argv
+    QList<QByteArray> a;
+    a.append(program.toLocal8Bit());
+    for (const QString &s : args) a.append(s.toLocal8Bit());
+    QVector<char *> argv;
+    for (QByteArray &b : a) argv.append(b.data());
+    argv.append(nullptr);
+
+    const QByteArray cwdB = cwd.trimmed().isEmpty() ? home : cwd.toLocal8Bit();
+
+    // Pipe para o neto devolver o PID (ou o errno de falha) ao helper.
+    int pfd[2];
+    if (::pipe2(pfd, O_CLOEXEC) != 0) {
+        sendErrorReply(QDBusError::Failed, QStringLiteral("pipe: %1").arg(QString::fromUtf8(::strerror(errno))));
+        return {};
+    }
+
+    const pid_t mid = ::fork();
+    if (mid == 0) {
+        // Intermediário: solta o processo (setsid) e faz o segundo fork.
+        ::close(pfd[0]);
+        ::setsid();
+        const pid_t g = ::fork();
+        if (g == 0) {
+            // Neto: aplica afinidade/nice/privilégios e executa.
+            if (!affinity.isEmpty()) {
+                cpu_set_t set; CPU_ZERO(&set);
+                for (uint c : affinity) CPU_SET(c, &set);
+                ::sched_setaffinity(0, sizeof set, &set);
+            }
+            if (uid != 0 || gid != 0) {
+                if (::setgid(gid) != 0) { int e = errno; ::write(pfd[1], &e, sizeof e); ::_exit(126); }
+                ::initgroups(uname.constData(), gid);
+                if (::setuid(uid) != 0) { int e = errno; ::write(pfd[1], &e, sizeof e); ::_exit(126); }
+            }
+            if (::chdir(cwdB.constData()) != 0) { /* não fatal */ }
+            ::setpriority(PRIO_PROCESS, 0, nice);
+            ::setenv("HOME", home.constData(), 1);
+            ::setenv("USER", uname.constData(), 1);
+            ::setenv("LOGNAME", uname.constData(), 1);
+            const int devnull = ::open("/dev/null", O_RDWR);
+            if (devnull >= 0) { ::dup2(devnull, 0); ::dup2(devnull, 1); ::dup2(devnull, 2); }
+            ::execvp(argv[0], argv.data());
+            int e = errno; ::write(pfd[1], &e, sizeof e); ::_exit(127);
+        }
+        // Intermediário: reporta o PID do neto e sai (reparenta o neto ao init).
+        int msg = -static_cast<int>(g);   // negativo = pid; positivo = errno
+        ::write(pfd[1], &msg, sizeof msg);
+        ::_exit(0);
+    }
+    ::close(pfd[1]);
+    int msg = 0;
+    const ssize_t rn = ::read(pfd[0], &msg, sizeof msg);
+    ::close(pfd[0]);
+    int st = 0; ::waitpid(mid, &st, 0);
+
+    if (rn != static_cast<ssize_t>(sizeof msg)) {
+        sendErrorReply(QDBusError::Failed, QStringLiteral("Falha ao lançar (sem resposta do filho)."));
+        return {};
+    }
+    if (msg > 0) { // errno reportado pelo neto (setuid/exec falharam)
+        audit(QStringLiteral("LaunchProcess(%1)").arg(program), 0, QStringLiteral("errno=%1").arg(msg));
+        sendErrorReply(QDBusError::Failed, QString::fromUtf8(::strerror(msg)));
+        return {};
+    }
+    const int newPid = -msg;
+    audit(QStringLiteral("LaunchProcess(%1 as %2)").arg(program, QString::fromUtf8(uname)),
+          static_cast<uint>(newPid), QStringLiteral("ok"));
+    return QStringLiteral("pid %1").arg(newPid);
 }
 
 void Helper::CgroupThrottle(uint pid, qulonglong starttime, int cpuPercent,

@@ -3,6 +3,24 @@
 Fases 0-4 completas. Clone funcional do Process Hacker, muito além do básico.
 
 ## Feito nesta rodada
+- **"Executar como…" (Run as)** — o ProcForge agora CRIA processos, não só
+  manipula os existentes. Método privilegiado `LaunchProcess` (helper): novo
+  processo como outro usuário (uid/gid + initgroups), com cwd, nice e afinidade,
+  duplo-fork para desanexar. Diálogo no menu Hacker. Action polkit
+  `process.launch`.
+- **Manipulação de páginas de memória** (`mmap`/`mprotect`/`munmap`) — o que o
+  PH faz em "Protect…"/"Free". Executado DENTRO do alvo via chamada remota de
+  função libc por ptrace (`inject/RemoteMem`); métodos `AllocMem`/`ProtectMem`/
+  `FreeMem` no helper, action `mem.map`. UI no scanner (aba Memória): alocar
+  região, mudar proteção R/W/X, liberar.
+- **Ícones por processo** na lista (`core/ProcessIcons`): ícone real do app via
+  índice dos `.desktop` (Exec→Icon), depois tema, e fallback de sistema
+  (engrenagem p/ kernel/serviço, terminal p/ shells, executável genérico).
+- **Tema Clássico estilo Windows 7 Aero** (sem transparência): folha de estilo
+  com gradientes, bordas beveladas, seleção azul degradê, abas arredondadas —
+  preservando as cores por categoria dos itens.
+
+## Rodada anterior
 - **Inspetor de propriedades** (`panels/ProcessProperties`, duplo-clique ou menu):
   abas Geral, Estatísticas (ao vivo), Threads (com suspend/resume), Token
   (uid/gid/**capabilities** decodificadas via capsh, seccomp, NoNewPrivs, contexto

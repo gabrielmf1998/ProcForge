@@ -38,6 +38,8 @@ add_executable(procforge
     src/actions/ProcessActions.cpp
     src/inject/FdInjector.cpp
     src/inject/LibraryInjector.cpp
+    src/inject/RemoteMem.cpp
+    src/core/ProcessIcons.cpp
     src/panels/DetailPanel.cpp
     src/panels/ScannerWindow.cpp
     src/panels/SystemTabs.cpp
@@ -66,6 +68,7 @@ add_executable(procforged
     helper/ProcConnector.cpp
     src/core/Procfs.cpp
     src/inject/LibraryInjector.cpp
+    src/inject/RemoteMem.cpp
 )
 
 target_include_directories(procforged PRIVATE ${CMAKE_SOURCE_DIR}/src ${CMAKE_SOURCE_DIR}/helper)

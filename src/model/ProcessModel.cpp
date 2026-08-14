@@ -1,4 +1,5 @@
 #include "ProcessModel.h"
+#include "core/ProcessIcons.h"
 
 #include <KFormat>
 #include <KLocalizedString>
@@ -100,6 +101,9 @@ QVariant ProcessModel::data(const QModelIndex &index, int role) const
     case CpuRole:        return p.cpuPercent;
     default: break;
     }
+
+    if (role == Qt::DecorationRole && index.column() == ColName)
+        return proc_icons::iconFor(p);
 
     if (role == Qt::TextAlignmentRole) {
         switch (index.column()) {

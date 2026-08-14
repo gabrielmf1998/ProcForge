@@ -30,6 +30,16 @@ public Q_SLOTS:
     QByteArray ReadMem(uint pid, qulonglong addr, uint len);
     void       WriteMem(uint pid, qulonglong addr, const QByteArray &bytes);
     void       InjectLibrary(uint pid, qulonglong starttime, const QString &path);
+    // Manipulação de páginas de memória do alvo (mmap/mprotect/munmap via ptrace).
+    qulonglong AllocMem(uint pid, qulonglong starttime, qulonglong length, int prot);
+    void       ProtectMem(uint pid, qulonglong starttime, qulonglong addr,
+                          qulonglong length, int prot);
+    void       FreeMem(uint pid, qulonglong starttime, qulonglong addr, qulonglong length);
+    // "Executar como…": cria um NOVO processo (uid/gid, cwd, nice, afinidade).
+    // Devolve "pid <n>" em sucesso. É o análogo do "Run as…" do Process Hacker.
+    QString    LaunchProcess(const QString &program, const QStringList &args,
+                             const QString &username, const QString &cwd,
+                             int nice, const QList<uint> &affinity);
     void       CgroupThrottle(uint pid, qulonglong starttime, int cpuPercent,
                               qulonglong memMaxBytes, qulonglong pidsMax, qulonglong ioMaxBps);
     void       CgroupRelease(uint pid, qulonglong starttime);

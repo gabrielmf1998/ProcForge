@@ -153,6 +153,34 @@ static QString callHelperStr(const QString &method, const QVariantList &args, QS
     return reply.arguments().isEmpty() ? QString() : reply.arguments().at(0).toString();
 }
 
+quint64 allocMem(int pid, quint64 starttime, quint64 length, int prot, QString *err)
+{
+    QDBusMessage msg = QDBusMessage::createMethodCall(
+        QLatin1String(kService), QLatin1String(kPath), QLatin1String(kIface),
+        QStringLiteral("AllocMem"));
+    msg.setArguments({ uint(pid), qulonglong(starttime), qulonglong(length), int(prot) });
+    const QDBusMessage reply = QDBusConnection::systemBus().call(msg, QDBus::Block, kTimeout);
+    if (reply.type() == QDBusMessage::ErrorMessage) {
+        if (err) *err = reply.errorMessage();
+        return 0;
+    }
+    if (err) err->clear();
+    return reply.arguments().isEmpty() ? 0 : reply.arguments().at(0).toULongLong();
+}
+
+actions::Result protectMem(int pid, quint64 starttime, quint64 addr, quint64 length, int prot)
+{
+    return callHelper(QStringLiteral("ProtectMem"),
+                      { uint(pid), qulonglong(starttime), qulonglong(addr),
+                        qulonglong(length), int(prot) });
+}
+
+actions::Result freeMem(int pid, quint64 starttime, quint64 addr, quint64 length)
+{
+    return callHelper(QStringLiteral("FreeMem"),
+                      { uint(pid), qulonglong(starttime), qulonglong(addr), qulonglong(length) });
+}
+
 QString nsRun(int pid, quint64 starttime, const QString &program,
               const QStringList &args, QString *err)
 {
@@ -279,6 +307,17 @@ void nsRunAsync(int pid, quint64 st, const QString &program, const QStringList &
 {
     callAsyncStr(QStringLiteral("NsRun"),
                  { uint(pid), qulonglong(st), program, args }, ctx, std::move(cb), kTimeout);
+}
+
+void launchProcessAsync(const QString &program, const QStringList &args,
+                        const QString &username, const QString &cwd,
+                        int nice, const QList<int> &affinity, QObject *ctx, StrCb cb)
+{
+    QList<uint> u; u.reserve(affinity.size());
+    for (int c : affinity) u.append(uint(c));
+    callAsyncStr(QStringLiteral("LaunchProcess"),
+                 { program, args, username, cwd, int(nice), QVariant::fromValue(u) },
+                 ctx, std::move(cb), kTimeout);
 }
 
 } // namespace helper

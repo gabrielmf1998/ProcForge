@@ -29,6 +29,11 @@ actions::Result setScheduler(int pid, quint64 starttime, int policy, int rtPrior
 actions::Result setIoPrio(int pid, quint64 starttime, int ioClass, int prio);
 actions::Result setRlimit(int pid, quint64 starttime, int resource, quint64 soft, quint64 hard);
 
+// Manipulação de páginas de memória (síncrono; usado pelo scanner/hex).
+quint64         allocMem(int pid, quint64 starttime, quint64 length, int prot, QString *err);
+actions::Result protectMem(int pid, quint64 starttime, quint64 addr, quint64 length, int prot);
+actions::Result freeMem(int pid, quint64 starttime, quint64 addr, quint64 length);
+
 QString nsRun(int pid, quint64 starttime, const QString &program,
               const QStringList &args, QString *err);
 QString bpfTrace(int pid, quint64 starttime, const QString &mode, int seconds, QString *err);
@@ -58,5 +63,10 @@ void cgroupReleaseAsync(int pid, quint64 starttime, QObject *ctx, ResultCb cb);
 using StrCb = std::function<void(const QString &out, const QString &err)>;
 void bpfTraceAsync(int pid, quint64 starttime, const QString &mode, int seconds, QObject *ctx, StrCb cb);
 void nsRunAsync(int pid, quint64 starttime, const QString &program, const QStringList &args, QObject *ctx, StrCb cb);
+
+// "Executar como…": cria um novo processo. out recebe "pid <n>" em sucesso.
+void launchProcessAsync(const QString &program, const QStringList &args,
+                        const QString &username, const QString &cwd,
+                        int nice, const QList<int> &affinity, QObject *ctx, StrCb cb);
 
 } // namespace helper

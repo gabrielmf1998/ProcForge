@@ -30,6 +30,7 @@
 #include <sched.h>
 #include <sys/resource.h>
 #include <unistd.h>
+#include <pwd.h>
 
 #include <KLocalizedString>
 #include <KMessageBox>
@@ -175,6 +176,8 @@ void MainWindow::buildMenusAndToolbar()
     auto *mHacker = menuBar()->addMenu(i18n("&Hacker"));
     connect(mHacker->addAction(ic("system-run"), i18n("Executar...")), &QAction::triggered,
             this, &MainWindow::runCommand);
+    connect(mHacker->addAction(ic("system-users"), i18n("Executar como...")), &QAction::triggered,
+            this, &MainWindow::runAsDialog);
     mHacker->addSeparator();
     connect(mHacker->addAction(ic("edit-find"), i18n("Localizar handles ou DLLs...")),
             &QAction::triggered, this, &MainWindow::findHandlesOrDlls);
@@ -424,6 +427,86 @@ void MainWindow::runCommand()
         return;
     if (!QProcess::startDetached(parts.first(), parts.mid(1)))
         KMessageBox::error(this, i18n("Não consegui iniciar: %1", cmd));
+}
+
+// "Executar como…": cria um NOVO processo como outro usuário, com cwd/nice/
+// afinidade — via helper + polkit. Análogo ao "Run as…" do Process Hacker; é o
+// que transforma o ProcForge de manipulador em CRIADOR de processos.
+void MainWindow::runAsDialog()
+{
+    QDialog dlg(this);
+    dlg.setWindowTitle(i18n("Executar como…"));
+    auto *form = new QFormLayout(&dlg);
+
+    auto *program = new QLineEdit(&dlg);
+    program->setPlaceholderText(QStringLiteral("/usr/bin/bash"));
+    auto *args = new QLineEdit(&dlg);
+    args->setPlaceholderText(i18n("argumentos (opcional)"));
+
+    auto *user = new QComboBox(&dlg);
+    user->setEditable(true);
+    // Usuários reais do sistema (root + uid>=1000), com o atual pré-selecionado.
+    QString cur;
+    if (const struct passwd *me = ::getpwuid(::getuid())) cur = QString::fromLocal8Bit(me->pw_name);
+    QStringList users;
+    ::setpwent();
+    while (const struct passwd *pw = ::getpwent()) {
+        if (pw->pw_uid == 0 || (pw->pw_uid >= 1000 && pw->pw_uid < 65534))
+            users << QString::fromLocal8Bit(pw->pw_name);
+    }
+    ::endpwent();
+    users.removeDuplicates();
+    users.sort();
+    user->addItems(users);
+    if (!cur.isEmpty()) user->setCurrentText(cur);
+
+    auto *cwd = new QLineEdit(&dlg);
+    cwd->setPlaceholderText(i18n("diretório de trabalho (vazio = home do usuário)"));
+    auto *nice = new QSpinBox(&dlg);
+    nice->setRange(-20, 19);
+    nice->setValue(0);
+    auto *affinity = new QLineEdit(&dlg);
+    affinity->setPlaceholderText(i18n("CPUs, ex.: 0,1,2 (vazio = todas)"));
+
+    form->addRow(i18n("Programa:"), program);
+    form->addRow(i18n("Argumentos:"), args);
+    form->addRow(i18n("Usuário:"), user);
+    form->addRow(i18n("Dir. de trabalho:"), cwd);
+    form->addRow(i18n("Prioridade (nice):"), nice);
+    form->addRow(i18n("Afinidade de CPU:"), affinity);
+
+    auto *bb = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, &dlg);
+    bb->button(QDialogButtonBox::Ok)->setText(i18n("Executar"));
+    connect(bb, &QDialogButtonBox::accepted, &dlg, &QDialog::accept);
+    connect(bb, &QDialogButtonBox::rejected, &dlg, &QDialog::reject);
+    form->addRow(bb);
+
+    if (dlg.exec() != QDialog::Accepted)
+        return;
+
+    const QString prog = program->text().trimmed();
+    if (prog.isEmpty()) {
+        KMessageBox::error(this, i18n("Informe o programa a executar."));
+        return;
+    }
+    const QStringList argList = args->text().trimmed().isEmpty()
+        ? QStringList() : QProcess::splitCommand(args->text());
+    QList<int> cpus;
+    const QStringList cpuToks = affinity->text().split(QLatin1Char(','), Qt::SkipEmptyParts);
+    for (const QString &t : cpuToks) {
+        bool ok = false; const int c = t.trimmed().toInt(&ok);
+        if (ok && c >= 0) cpus << c;
+    }
+
+    helper::launchProcessAsync(prog, argList, user->currentText().trimmed(),
+                               cwd->text().trimmed(), nice->value(), cpus, this,
+                               [this, prog](const QString &out, const QString &err) {
+        if (!err.isEmpty()) {
+            KMessageBox::error(this, i18n("Não consegui executar %1:\n%2", prog, err));
+            return;
+        }
+        statusBar()->showMessage(i18n("Iniciado: %1 (%2)", prog, out), 6000);
+    });
 }
 
 void MainWindow::findHandlesOrDlls()

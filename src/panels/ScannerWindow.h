@@ -31,12 +31,17 @@ private Q_SLOTS:
     void hexRead();
     void hexWrite();
     void onTypeChanged();
+    // Manipulação de páginas (mmap/mprotect/munmap) via helper.
+    void memAlloc();
+    void memProtect();
+    void memFree();
 
 private:
     QByteArray readBytes(quint64 addr, int len);          // direto + fallback helper
     bool       writeBytes(quint64 addr, const QByteArray &raw);
     void       reloadResults();
     ScanType   currentType() const;
+    int        protFromChecks() const;   // R/W/X marcados -> PROT_*
 
     int      m_pid;
     quint64  m_starttime;
@@ -61,6 +66,13 @@ private:
     QPlainTextEdit*m_hexView = nullptr;
     QLineEdit     *m_hexWriteAddr = nullptr;
     QLineEdit     *m_hexWriteBytes = nullptr;
+
+    // Controles de manipulação de páginas
+    QLineEdit *m_pageAddr = nullptr;
+    QLineEdit *m_pageLen  = nullptr;
+    class QCheckBox *m_protR = nullptr;
+    class QCheckBox *m_protW = nullptr;
+    class QCheckBox *m_protX = nullptr;
 
     static constexpr int kDisplayCap = 2000;
 };

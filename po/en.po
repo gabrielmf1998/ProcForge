@@ -189,155 +189,104 @@ msgstr "close(%1) executed in target (return %2)."
 msgid "fd %1 duplicado para nós via pidfd_getfd (fd local %2). O fd do dono continua aberto."
 msgstr "fd %1 duplicated to us via pidfd_getfd (local fd %2). The owner's fd stays open."
 
-msgid "Scanner de memória — %1 (PID %2)"
-msgstr "Memory scanner — %1 (PID %2)"
+msgid "Unidade"
+msgstr "Unit"
 
-msgid "Tipo:"
-msgstr "Type:"
+msgid "Carregada"
+msgstr "Loaded"
 
-msgid "Valor:"
-msgstr "Value:"
+msgid "Ativa"
+msgstr "Active"
 
-msgid "Primeira busca"
-msgstr "First scan"
+msgid "Sub"
+msgstr "Sub"
 
-msgid "= valor"
-msgstr "= value"
+msgid "Ativação"
+msgstr "Startup"
 
-msgid "mudou"
-msgstr "changed"
+msgid "Iniciar"
+msgstr "Start"
 
-msgid "não mudou"
-msgstr "unchanged"
+msgid "Parar"
+msgstr "Stop"
 
-msgid "aumentou"
-msgstr "increased"
+msgid "Reiniciar"
+msgstr "Restart"
 
-msgid "diminuiu"
-msgstr "decreased"
+msgid "Recarregar"
+msgstr "Reload"
 
-msgid "> valor"
-msgstr "> value"
+msgid "Habilitar (no boot)"
+msgstr "Enable (on boot)"
 
-msgid "< valor"
-msgstr "< value"
+msgid "Desabilitar (no boot)"
+msgstr "Disable (on boot)"
 
-msgid "Refinar"
-msgstr "Refine"
+msgid "Mascarar"
+msgstr "Mask"
 
-msgid "Nova busca"
-msgstr "New scan"
+msgid "Desmascarar"
+msgstr "Unmask"
 
-msgid "0 resultados"
-msgstr "0 results"
+msgid "Status / journal..."
+msgstr "Status / journal..."
 
-msgid "Endereço"
-msgstr "Address"
+msgid "Ir para o processo"
+msgstr "Go to process"
 
-msgid "Valor"
-msgstr "Value"
+msgid "Status — %1"
+msgstr "Status — %1"
 
-msgid "Editar valor..."
-msgstr "Edit value..."
+msgid "(sem saída)"
+msgstr "(no output)"
 
-msgid "Congelar →"
-msgstr "Freeze →"
+msgid "O serviço %1 não tem processo principal em execução."
+msgstr "Service %1 has no running main process."
 
-msgid "Congelados (reescritos em loop):"
-msgstr "Frozen (rewritten in a loop):"
+msgid "Proto"
+msgstr "Proto"
 
-msgid "Valor travado"
-msgstr "Locked value"
+msgid "Estado"
+msgstr "State"
 
-msgid "Descongelar"
-msgstr "Unfreeze"
+msgid "Local"
+msgstr "Local"
 
-msgid "Scanner"
-msgstr "Scanner"
+msgid "Remoto"
+msgstr "Remote"
 
-msgid "Ler memória"
-msgstr "Read memory"
+msgid "Processo"
+msgstr "Process"
 
-msgid "Endereço (hex):"
-msgstr "Address (hex):"
+msgid "Fechar esta conexão (ss -K)"
+msgstr "Close this connection (ss -K)"
 
-msgid "Bytes:"
-msgstr "Bytes:"
+msgid "Não consegui montar o filtro da conexão."
+msgstr "Could not build the connection filter."
 
-msgid "Ler"
-msgstr "Read"
+msgid "Matar processo (SIGTERM)"
+msgstr "Kill process (SIGTERM)"
 
-msgid "Escrever bytes"
-msgstr "Write bytes"
+msgid "Matar processo (SIGKILL)"
+msgstr "Kill process (SIGKILL)"
 
-msgid "Bytes (hex):"
-msgstr "Bytes (hex):"
+msgid "Copiar PID"
+msgstr "Copy PID"
 
-msgid "Gravar"
-msgstr "Write"
+msgid "Dispositivo"
+msgstr "Device"
 
-msgid "Memória (hex)"
-msgstr "Memory (hex)"
+msgid "Leitura/s"
+msgstr "Read/s"
 
-msgid "Digite um valor para buscar."
-msgstr "Type a value to search for."
+msgid "Escrita/s"
+msgstr "Write/s"
 
-msgid "Sem permissão para ler a memória deste processo (uid diferente). A busca direta funciona para processos do seu usuário; varredura cross-uid pelo helper é um passo futuro."
-msgstr "No permission to read this process's memory (different uid). Direct scanning works for your own processes; cross-uid scanning via the helper is a future step."
+msgid "Lido (total)"
+msgstr "Read (total)"
 
-msgid "Faça a primeira busca antes de refinar."
-msgstr "Do the first scan before refining."
-
-msgid "%1 resultados (mostrando %2)"
-msgstr "%1 results (showing %2)"
-
-msgid "%1+ resultados (truncado — refine mais)"
-msgstr "%1+ results (truncated — refine further)"
-
-msgid "%1 resultados"
-msgstr "%1 results"
-
-msgid "Selecione um resultado."
-msgstr "Select a result."
-
-msgid "Editar valor em 0x%1"
-msgstr "Edit value at 0x%1"
-
-msgid "Novo valor (%1):"
-msgstr "New value (%1):"
-
-msgid "Valor inválido para o tipo %1."
-msgstr "Invalid value for type %1."
-
-msgid "Falha ao escrever na memória (permissão?)."
-msgstr "Failed to write to memory (permission?)."
-
-msgid "Selecione um resultado para congelar."
-msgstr "Select a result to freeze."
-
-msgid "Não consegui ler o valor atual."
-msgstr "Could not read the current value."
-
-msgid "Endereço inválido."
-msgstr "Invalid address."
-
-msgid "<falha ao ler — endereço não mapeado ou sem permissão>"
-msgstr "<failed to read — address not mapped or no permission>"
-
-msgid "Bytes hex inválidos (ex.: de ad be ef)."
-msgstr "Invalid hex bytes (e.g.: de ad be ef)."
-
-msgid "Gravar %1 byte(s) em 0x%2 do processo %3?"
-msgstr "Write %1 byte(s) at 0x%2 of process %3?"
-
-msgid "Escrever na memória"
-msgstr "Write to memory"
-
-msgid "%1 byte(s) gravado(s)."
-msgstr "%1 byte(s) written."
-
-msgid "Falha ao gravar (permissão?)."
-msgstr "Failed to write (permission?)."
+msgid "Escrito (total)"
+msgstr "Written (total)"
 
 msgid "Propriedades — %1 (PID %2)"
 msgstr "Properties — %1 (PID %2)"
@@ -369,9 +318,6 @@ msgstr "Memory"
 msgid "PID pai"
 msgstr "Parent PID"
 
-msgid "Estado"
-msgstr "State"
-
 msgid "Iniciado"
 msgstr "Started"
 
@@ -395,6 +341,9 @@ msgstr "CPU affinity"
 
 msgid "Métrica"
 msgstr "Metric"
+
+msgid "Valor"
+msgstr "Value"
 
 msgid "TID"
 msgstr "TID"
@@ -501,101 +450,200 @@ msgstr "Context switches (involuntary)"
 msgid "  [suspensa]"
 msgstr "  [suspended]"
 
-msgid "Unidade"
-msgstr "Unit"
+msgid "Scanner de memória — %1 (PID %2)"
+msgstr "Memory scanner — %1 (PID %2)"
 
-msgid "Carregada"
-msgstr "Loaded"
+msgid "Tipo:"
+msgstr "Type:"
 
-msgid "Ativa"
-msgstr "Active"
+msgid "Valor:"
+msgstr "Value:"
 
-msgid "Sub"
-msgstr "Sub"
+msgid "Primeira busca"
+msgstr "First scan"
 
-msgid "Ativação"
-msgstr "Startup"
+msgid "= valor"
+msgstr "= value"
 
-msgid "Iniciar"
-msgstr "Start"
+msgid "mudou"
+msgstr "changed"
 
-msgid "Parar"
-msgstr "Stop"
+msgid "não mudou"
+msgstr "unchanged"
 
-msgid "Reiniciar"
-msgstr "Restart"
+msgid "aumentou"
+msgstr "increased"
 
-msgid "Recarregar"
-msgstr "Reload"
+msgid "diminuiu"
+msgstr "decreased"
 
-msgid "Habilitar (no boot)"
-msgstr "Enable (on boot)"
+msgid "> valor"
+msgstr "> value"
 
-msgid "Desabilitar (no boot)"
-msgstr "Disable (on boot)"
+msgid "< valor"
+msgstr "< value"
 
-msgid "Mascarar"
-msgstr "Mask"
+msgid "Refinar"
+msgstr "Refine"
 
-msgid "Desmascarar"
-msgstr "Unmask"
+msgid "Nova busca"
+msgstr "New scan"
 
-msgid "Status / journal..."
-msgstr "Status / journal..."
+msgid "0 resultados"
+msgstr "0 results"
 
-msgid "Ir para o processo"
-msgstr "Go to process"
+msgid "Endereço"
+msgstr "Address"
 
-msgid "Status — %1"
-msgstr "Status — %1"
+msgid "Editar valor..."
+msgstr "Edit value..."
 
-msgid "(sem saída)"
-msgstr "(no output)"
+msgid "Congelar →"
+msgstr "Freeze →"
 
-msgid "O serviço %1 não tem processo principal em execução."
-msgstr "Service %1 has no running main process."
+msgid "Congelados (reescritos em loop):"
+msgstr "Frozen (rewritten in a loop):"
 
-msgid "Proto"
-msgstr "Proto"
+msgid "Valor travado"
+msgstr "Locked value"
 
-msgid "Local"
-msgstr "Local"
+msgid "Descongelar"
+msgstr "Unfreeze"
 
-msgid "Remoto"
-msgstr "Remote"
+msgid "Scanner"
+msgstr "Scanner"
 
-msgid "Processo"
-msgstr "Process"
+msgid "Ler memória"
+msgstr "Read memory"
 
-msgid "Fechar esta conexão (ss -K)"
-msgstr "Close this connection (ss -K)"
+msgid "Endereço (hex):"
+msgstr "Address (hex):"
 
-msgid "Não consegui montar o filtro da conexão."
-msgstr "Could not build the connection filter."
+msgid "Bytes:"
+msgstr "Bytes:"
 
-msgid "Matar processo (SIGTERM)"
-msgstr "Kill process (SIGTERM)"
+msgid "Ler"
+msgstr "Read"
 
-msgid "Matar processo (SIGKILL)"
-msgstr "Kill process (SIGKILL)"
+msgid "Escrever bytes"
+msgstr "Write bytes"
 
-msgid "Copiar PID"
-msgstr "Copy PID"
+msgid "Bytes (hex):"
+msgstr "Bytes (hex):"
 
-msgid "Dispositivo"
-msgstr "Device"
+msgid "Gravar"
+msgstr "Write"
 
-msgid "Leitura/s"
-msgstr "Read/s"
+msgid "Manipular páginas (mmap / mprotect / munmap)"
+msgstr "Manipulate pages (mmap / mprotect / munmap)"
 
-msgid "Escrita/s"
-msgstr "Write/s"
+msgid "Tamanho (bytes):"
+msgstr "Size (bytes):"
 
-msgid "Lido (total)"
-msgstr "Read (total)"
+msgid "Proteção:"
+msgstr "Protection:"
 
-msgid "Escrito (total)"
-msgstr "Written (total)"
+msgid "Alocar (mmap)"
+msgstr "Allocate (mmap)"
+
+msgid "Proteger (mprotect)"
+msgstr "Protect (mprotect)"
+
+msgid "Liberar (munmap)"
+msgstr "Free (munmap)"
+
+msgid "Memória (hex)"
+msgstr "Memory (hex)"
+
+msgid "Digite um valor para buscar."
+msgstr "Type a value to search for."
+
+msgid "Sem permissão para ler a memória deste processo (uid diferente). A busca direta funciona para processos do seu usuário; varredura cross-uid pelo helper é um passo futuro."
+msgstr "No permission to read this process's memory (different uid). Direct scanning works for your own processes; cross-uid scanning via the helper is a future step."
+
+msgid "Faça a primeira busca antes de refinar."
+msgstr "Do the first scan before refining."
+
+msgid "%1 resultados (mostrando %2)"
+msgstr "%1 results (showing %2)"
+
+msgid "%1+ resultados (truncado — refine mais)"
+msgstr "%1+ results (truncated — refine further)"
+
+msgid "%1 resultados"
+msgstr "%1 results"
+
+msgid "Selecione um resultado."
+msgstr "Select a result."
+
+msgid "Editar valor em 0x%1"
+msgstr "Edit value at 0x%1"
+
+msgid "Novo valor (%1):"
+msgstr "New value (%1):"
+
+msgid "Valor inválido para o tipo %1."
+msgstr "Invalid value for type %1."
+
+msgid "Falha ao escrever na memória (permissão?)."
+msgstr "Failed to write to memory (permission?)."
+
+msgid "Selecione um resultado para congelar."
+msgstr "Select a result to freeze."
+
+msgid "Não consegui ler o valor atual."
+msgstr "Could not read the current value."
+
+msgid "Endereço inválido."
+msgstr "Invalid address."
+
+msgid "<falha ao ler — endereço não mapeado ou sem permissão>"
+msgstr "<failed to read — address not mapped or no permission>"
+
+msgid "Bytes hex inválidos (ex.: de ad be ef)."
+msgstr "Invalid hex bytes (e.g.: de ad be ef)."
+
+msgid "Gravar %1 byte(s) em 0x%2 do processo %3?"
+msgstr "Write %1 byte(s) at 0x%2 of process %3?"
+
+msgid "Escrever na memória"
+msgstr "Write to memory"
+
+msgid "%1 byte(s) gravado(s)."
+msgstr "%1 byte(s) written."
+
+msgid "Falha ao gravar (permissão?)."
+msgstr "Failed to write (permission?)."
+
+msgid "Tamanho inválido."
+msgstr "Invalid size."
+
+msgid "erro"
+msgstr "error"
+
+msgid "mmap falhou: %1"
+msgstr "mmap failed: %1"
+
+msgid "Região alocada em %1 (%2 bytes)."
+msgstr "Region allocated at %1 (%2 bytes)."
+
+msgid "Proteção alterada em 0x%1."
+msgstr "Protection changed at 0x%1."
+
+msgid "mprotect falhou: %1"
+msgstr "mprotect failed: %1"
+
+msgid "Liberar (munmap) %1 byte(s) em 0x%2 do processo %3?\nSe a região estiver em uso, o processo pode falhar."
+msgstr "Free (munmap) %1 byte(s) at 0x%2 of process %3?\nIf the region is in use, the process may crash."
+
+msgid "Liberar memória"
+msgstr "Free memory"
+
+msgid "Região liberada."
+msgstr "Region freed."
+
+msgid "munmap falhou: %1"
+msgstr "munmap failed: %1"
 
 msgid "Helper privilegiado não instalado. Rode: ./install-helper.sh"
 msgstr "Privileged helper not installed. Run: ./install-helper.sh"
@@ -620,6 +668,9 @@ msgstr "&Hacker"
 
 msgid "Executar..."
 msgstr "Run..."
+
+msgid "Executar como..."
+msgstr "Run as..."
 
 msgid "Localizar handles ou DLLs..."
 msgstr "Find handles or DLLs..."
@@ -761,6 +812,45 @@ msgstr "Program and arguments:"
 
 msgid "Não consegui iniciar: %1"
 msgstr "Could not start: %1"
+
+msgid "Executar como…"
+msgstr "Run as…"
+
+msgid "argumentos (opcional)"
+msgstr "arguments (optional)"
+
+msgid "diretório de trabalho (vazio = home do usuário)"
+msgstr "working directory (empty = user's home)"
+
+msgid "CPUs, ex.: 0,1,2 (vazio = todas)"
+msgstr "CPUs, e.g. 0,1,2 (empty = all)"
+
+msgid "Programa:"
+msgstr "Program:"
+
+msgid "Argumentos:"
+msgstr "Arguments:"
+
+msgid "Usuário:"
+msgstr "User:"
+
+msgid "Dir. de trabalho:"
+msgstr "Working dir:"
+
+msgid "Prioridade (nice):"
+msgstr "Priority (nice):"
+
+msgid "Afinidade de CPU:"
+msgstr "CPU affinity:"
+
+msgid "Informe o programa a executar."
+msgstr "Enter the program to run."
+
+msgid "Não consegui executar %1:\n%2"
+msgstr "Could not run %1:\n%2"
+
+msgid "Iniciado: %1 (%2)"
+msgstr "Started: %1 (%2)"
 
 msgid "Buscar em fds e bibliotecas mapeadas (nome de arquivo, socket:[inode], .so):"
 msgstr "Search fds and mapped libraries (file name, socket:[inode], .so):"

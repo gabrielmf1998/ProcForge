@@ -50,7 +50,7 @@ No Windows, o Process Hacker precisa de um **driver em kernel mode** porque o SO
 
 **Lista de processos**
 - Árvore ao vivo com atualização **quase instantânea** via eventos `cn_proc` (fork/exec/exit em push, sem polling perceptível).
-- Colunas do Process Hacker (Nome, PID, CPU, I/O total, Bytes privados, Usuário, Descrição), com **cores por categoria** (verde=serviço, rosa=root, ciano=seu, cinza=suspenso, amarelo=kernel, flash verde=novo).
+- Colunas do Process Hacker (Nome, PID, CPU, I/O total, Bytes privados, Usuário, Descrição), com **cores por categoria** (verde=serviço, rosa=root, ciano=seu, cinza=suspenso, amarelo=kernel, flash verde=novo) e **ícone por processo** (ícone real do app via `.desktop`, com fallback de sistema).
 - Busca/filtro, ordenação, e **inspetor de propriedades** (duplo-clique): abas **Geral, Estatísticas** (ao vivo), **Threads** (suspender por thread), **Token** (uid/gid, *capabilities* decodificadas, seccomp, SELinux), **Ambiente**, **Handles** (fds), **Memória** (maps).
 
 **Manipulação de processos**
@@ -58,10 +58,12 @@ No Windows, o Process Hacker precisa de um **driver em kernel mode** porque o SO
 - Suspender/retomar, **matar árvore inteira**, renice, afinidade de CPU.
 - **Escalonamento** (SCHED_OTHER/BATCH/IDLE/FIFO/RR), **ionice**, **prlimit** ao vivo.
 - **Suspender/retomar uma thread individual** (ptrace por TID).
+- **Executar como…** (Run as): **cria um novo processo** como outro usuário, com diretório de trabalho, *nice* e afinidade — o ProcForge não só manipula o que existe, ele **cria e controla** processos.
 
 **Memória (estilo Cheat Engine / scanmem)**
 - Scanner de valor com busca exata, **refinamento** (mudou/não mudou/aumentou/diminuiu/…), **congelamento de valor** (reescrita em loop) e **editor hexadecimal**.
 - Leitura/escrita via `process_vm_readv/writev`.
+- **Manipulação de páginas** (o "Protect…/Free" do PH): **alocar** (`mmap`), **mudar proteção R/W/X** (`mprotect`) e **liberar** (`munmap`) regiões do alvo — executado *dentro* do processo por chamada remota de função libc via ptrace.
 
 **Injeção e descritores**
 - **Injeção de biblioteca** (`dlopen` forçado via ptrace) — a "injeção de DLL" do Linux.

@@ -22,8 +22,10 @@
 #include <QSplitter>
 #include <QInputDialog>
 #include <QFontDatabase>
+#include <QCheckBox>
 
 #include <cerrno>
+#include <sys/mman.h>
 
 namespace {
 quint64 parseAddr(const QString &t, bool *ok)
@@ -179,6 +181,38 @@ ScannerWindow::ScannerWindow(int pid, quint64 starttime, const QString &name, QW
         connect(bWrite, &QPushButton::clicked, this, &ScannerWindow::hexWrite);
         wl->addWidget(bWrite);
         v->addWidget(writeBox);
+
+        // --- Manipulação de páginas: mmap / mprotect / munmap (via helper) ---
+        auto *pageBox = new QGroupBox(i18n("Manipular páginas (mmap / mprotect / munmap)"), page);
+        auto *pv = new QVBoxLayout(pageBox);
+        auto *pr1 = new QHBoxLayout;
+        pr1->addWidget(new QLabel(i18n("Endereço (hex):"), pageBox));
+        m_pageAddr = new QLineEdit(pageBox);
+        m_pageAddr->setPlaceholderText(QStringLiteral("0x... (alvo de proteger/liberar)"));
+        pr1->addWidget(m_pageAddr, 1);
+        pr1->addWidget(new QLabel(i18n("Tamanho (bytes):"), pageBox));
+        m_pageLen = new QLineEdit(pageBox);
+        m_pageLen->setText(QStringLiteral("4096"));
+        m_pageLen->setMaximumWidth(110);
+        pr1->addWidget(m_pageLen);
+        pv->addLayout(pr1);
+
+        auto *pr2 = new QHBoxLayout;
+        pr2->addWidget(new QLabel(i18n("Proteção:"), pageBox));
+        m_protR = new QCheckBox(QStringLiteral("R"), pageBox); m_protR->setChecked(true);
+        m_protW = new QCheckBox(QStringLiteral("W"), pageBox); m_protW->setChecked(true);
+        m_protX = new QCheckBox(QStringLiteral("X"), pageBox);
+        pr2->addWidget(m_protR); pr2->addWidget(m_protW); pr2->addWidget(m_protX);
+        pr2->addStretch();
+        auto *bAlloc = new QPushButton(i18n("Alocar (mmap)"), pageBox);
+        connect(bAlloc, &QPushButton::clicked, this, &ScannerWindow::memAlloc);
+        auto *bProtect = new QPushButton(i18n("Proteger (mprotect)"), pageBox);
+        connect(bProtect, &QPushButton::clicked, this, &ScannerWindow::memProtect);
+        auto *bFree = new QPushButton(i18n("Liberar (munmap)"), pageBox);
+        connect(bFree, &QPushButton::clicked, this, &ScannerWindow::memFree);
+        pr2->addWidget(bAlloc); pr2->addWidget(bProtect); pr2->addWidget(bFree);
+        pv->addLayout(pr2);
+        v->addWidget(pageBox);
 
         tabs->addTab(page, i18n("Memória (hex)"));
     }
@@ -438,4 +472,70 @@ void ScannerWindow::hexWrite()
         KMessageBox::information(this, i18n("%1 byte(s) gravado(s).", raw.size()));
     else
         KMessageBox::error(this, i18n("Falha ao gravar (permissão?)."));
+}
+
+// ---- manipulação de páginas (mmap/mprotect/munmap) via helper ----
+
+int ScannerWindow::protFromChecks() const
+{
+    int prot = 0;
+    if (m_protR->isChecked()) prot |= PROT_READ;
+    if (m_protW->isChecked()) prot |= PROT_WRITE;
+    if (m_protX->isChecked()) prot |= PROT_EXEC;
+    return prot;
+}
+
+void ScannerWindow::memAlloc()
+{
+    bool ok = false;
+    const quint64 len = m_pageLen->text().trimmed().toULongLong(&ok);
+    if (!ok || len == 0) {
+        KMessageBox::error(this, i18n("Tamanho inválido."));
+        return;
+    }
+    QString err;
+    const quint64 addr = helper::allocMem(m_pid, m_starttime, len, protFromChecks(), &err);
+    if (addr == 0) {
+        KMessageBox::error(this, i18n("mmap falhou: %1", err.isEmpty() ? i18n("erro") : err));
+        return;
+    }
+    const QString hex = QStringLiteral("0x%1").arg(addr, 0, 16);
+    m_pageAddr->setText(hex);
+    m_hexAddr->setText(hex);
+    KMessageBox::information(this, i18n("Região alocada em %1 (%2 bytes).", hex, len));
+}
+
+void ScannerWindow::memProtect()
+{
+    bool ok = false;
+    const quint64 addr = parseAddr(m_pageAddr->text(), &ok);
+    if (!ok) { KMessageBox::error(this, i18n("Endereço inválido.")); return; }
+    const quint64 len = m_pageLen->text().trimmed().toULongLong();
+    if (len == 0) { KMessageBox::error(this, i18n("Tamanho inválido.")); return; }
+    const actions::Result r = helper::protectMem(m_pid, m_starttime, addr, len, protFromChecks());
+    if (r.ok)
+        KMessageBox::information(this, i18n("Proteção alterada em 0x%1.", QString::number(addr, 16)));
+    else
+        KMessageBox::error(this, i18n("mprotect falhou: %1", r.error));
+}
+
+void ScannerWindow::memFree()
+{
+    bool ok = false;
+    const quint64 addr = parseAddr(m_pageAddr->text(), &ok);
+    if (!ok) { KMessageBox::error(this, i18n("Endereço inválido.")); return; }
+    const quint64 len = m_pageLen->text().trimmed().toULongLong();
+    if (len == 0) { KMessageBox::error(this, i18n("Tamanho inválido.")); return; }
+    const auto btn = KMessageBox::warningContinueCancel(
+        this, i18n("Liberar (munmap) %1 byte(s) em 0x%2 do processo %3?\n"
+                   "Se a região estiver em uso, o processo pode falhar.",
+                   len, QString::number(addr, 16), m_pid),
+        i18n("Liberar memória"));
+    if (btn != KMessageBox::Continue)
+        return;
+    const actions::Result r = helper::freeMem(m_pid, m_starttime, addr, len);
+    if (r.ok)
+        KMessageBox::information(this, i18n("Região liberada."));
+    else
+        KMessageBox::error(this, i18n("munmap falhou: %1", r.error));
 }
