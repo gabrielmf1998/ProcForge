@@ -15,7 +15,7 @@ optdepends=('bpftrace: rastreamento eBPF por processo'
             'iptables: cortar/restabelecer rede de um processo')
 makedepends=('cmake' 'ninja' 'extra-cmake-modules' 'gettext')
 source=("$pkgname-$pkgver.tar.gz")
-sha256sums=('1850e2b68b9acb63808c088190bff2f349074a971aa252251a3580d46f86228e')
+sha256sums=('926888a723b29929b19b441e0ba887a76d86e8c8025c5d6caeda7e13a807c68e')
 
 build() {
   cmake -S "$pkgname-$pkgver" -B build -G Ninja \
