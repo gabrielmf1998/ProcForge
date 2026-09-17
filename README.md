@@ -83,7 +83,7 @@ No Windows, o Process Hacker precisa de um **driver em kernel mode** porque o SO
 
 **Abas de sistema**
 - **Serviços** (systemd): iniciar/parar/reiniciar/recarregar, **habilitar/desabilitar**, **mascarar/desmascarar**, status/journal.
-- **Rede** (`ss`): matar o dono da conexão, **fechar a conexão** (`ss -K`), ir para o processo.
+- **Rede** (`ss`): matar o dono da conexão, **fechar a conexão** (`ss -K`), ir para o processo. Seção **"Processos com a rede cortada"**: lista com ícone/nome/PID/caminho de cada processo com a internet cortada agora, com opção de restabelecer — some sozinha quando não há nenhum.
 - **Disco**: throughput por dispositivo.
 
 **Interface**
