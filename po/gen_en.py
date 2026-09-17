@@ -433,6 +433,8 @@ T = {
     "Rede restabelecida para %1.": "Network restored for %1.",
     "Não consegui isolar o processo num cgroup.": "Could not isolate the process into a cgroup.",
     "iptables não encontrado (instale o pacote iptables).": "iptables not found (install the iptables package).",
+    "Processos com a rede cortada": "Processes with network cut",
+    "Caminho": "Path",
 }
 
 ids = parse_ids('po/procforge.pot')

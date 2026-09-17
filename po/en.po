@@ -378,102 +378,6 @@ msgstr "Context switches (involuntary)"
 msgid "  [suspensa]"
 msgstr "  [suspended]"
 
-msgid "Unidade"
-msgstr "Unit"
-
-msgid "Carregada"
-msgstr "Loaded"
-
-msgid "Ativa"
-msgstr "Active"
-
-msgid "Sub"
-msgstr "Sub"
-
-msgid "Ativação"
-msgstr "Startup"
-
-msgid "Iniciar"
-msgstr "Start"
-
-msgid "Parar"
-msgstr "Stop"
-
-msgid "Reiniciar"
-msgstr "Restart"
-
-msgid "Recarregar"
-msgstr "Reload"
-
-msgid "Habilitar (no boot)"
-msgstr "Enable (on boot)"
-
-msgid "Desabilitar (no boot)"
-msgstr "Disable (on boot)"
-
-msgid "Mascarar"
-msgstr "Mask"
-
-msgid "Desmascarar"
-msgstr "Unmask"
-
-msgid "Status / journal..."
-msgstr "Status / journal..."
-
-msgid "Ir para o processo"
-msgstr "Go to process"
-
-msgid "Status — %1"
-msgstr "Status — %1"
-
-msgid "(sem saída)"
-msgstr "(no output)"
-
-msgid "O serviço %1 não tem processo principal em execução."
-msgstr "Service %1 has no running main process."
-
-msgid "Proto"
-msgstr "Proto"
-
-msgid "Local"
-msgstr "Local"
-
-msgid "Remoto"
-msgstr "Remote"
-
-msgid "Processo"
-msgstr "Process"
-
-msgid "Fechar esta conexão (ss -K)"
-msgstr "Close this connection (ss -K)"
-
-msgid "Não consegui montar o filtro da conexão."
-msgstr "Could not build the connection filter."
-
-msgid "Matar processo (SIGTERM)"
-msgstr "Kill process (SIGTERM)"
-
-msgid "Matar processo (SIGKILL)"
-msgstr "Kill process (SIGKILL)"
-
-msgid "Copiar PID"
-msgstr "Copy PID"
-
-msgid "Dispositivo"
-msgstr "Device"
-
-msgid "Leitura/s"
-msgstr "Read/s"
-
-msgid "Escrita/s"
-msgstr "Write/s"
-
-msgid "Lido (total)"
-msgstr "Read (total)"
-
-msgid "Escrito (total)"
-msgstr "Written (total)"
-
 msgid "Scanner de memória — %1 (PID %2)"
 msgstr "Memory scanner — %1 (PID %2)"
 
@@ -669,6 +573,117 @@ msgstr "Region freed."
 msgid "munmap falhou: %1"
 msgstr "munmap failed: %1"
 
+msgid "Unidade"
+msgstr "Unit"
+
+msgid "Carregada"
+msgstr "Loaded"
+
+msgid "Ativa"
+msgstr "Active"
+
+msgid "Sub"
+msgstr "Sub"
+
+msgid "Ativação"
+msgstr "Startup"
+
+msgid "Iniciar"
+msgstr "Start"
+
+msgid "Parar"
+msgstr "Stop"
+
+msgid "Reiniciar"
+msgstr "Restart"
+
+msgid "Recarregar"
+msgstr "Reload"
+
+msgid "Habilitar (no boot)"
+msgstr "Enable (on boot)"
+
+msgid "Desabilitar (no boot)"
+msgstr "Disable (on boot)"
+
+msgid "Mascarar"
+msgstr "Mask"
+
+msgid "Desmascarar"
+msgstr "Unmask"
+
+msgid "Status / journal..."
+msgstr "Status / journal..."
+
+msgid "Ir para o processo"
+msgstr "Go to process"
+
+msgid "Status — %1"
+msgstr "Status — %1"
+
+msgid "(sem saída)"
+msgstr "(no output)"
+
+msgid "O serviço %1 não tem processo principal em execução."
+msgstr "Service %1 has no running main process."
+
+msgid "Processos com a rede cortada"
+msgstr "Processes with network cut"
+
+msgid "Processo"
+msgstr "Process"
+
+msgid "Caminho"
+msgstr "Path"
+
+msgid "Restabelecer rede"
+msgstr "Restore network"
+
+msgid "Copiar PID"
+msgstr "Copy PID"
+
+msgid "Proto"
+msgstr "Proto"
+
+msgid "Local"
+msgstr "Local"
+
+msgid "Remoto"
+msgstr "Remote"
+
+msgid "Fechar esta conexão (ss -K)"
+msgstr "Close this connection (ss -K)"
+
+msgid "Não consegui montar o filtro da conexão."
+msgstr "Could not build the connection filter."
+
+msgid "Matar processo (SIGTERM)"
+msgstr "Kill process (SIGTERM)"
+
+msgid "Matar processo (SIGKILL)"
+msgstr "Kill process (SIGKILL)"
+
+msgid "Dispositivo"
+msgstr "Device"
+
+msgid "Leitura/s"
+msgstr "Read/s"
+
+msgid "Escrita/s"
+msgstr "Write/s"
+
+msgid "Lido (total)"
+msgstr "Read (total)"
+
+msgid "Escrito (total)"
+msgstr "Written (total)"
+
+msgid "Helper privilegiado não instalado. Rode: ./install-helper.sh"
+msgstr "Privileged helper not installed. Run: ./install-helper.sh"
+
+msgid "Autorização negada pelo polkit."
+msgstr "Authorization denied by polkit."
+
 msgid "Processos"
 msgstr "Processes"
 
@@ -716,6 +731,9 @@ msgstr "2 s"
 
 msgid "5 s"
 msgstr "5 s"
+
+msgid "Parar (manual)"
+msgstr "Stop (manual)"
 
 msgid "Expandir tudo"
 msgstr "Expand all"
@@ -945,6 +963,9 @@ msgstr "Close window"
 msgid "Remover limites (cgroup)"
 msgstr "Remove limits (cgroup)"
 
+msgid "Cortar rede (sem internet)"
+msgstr "Cut network (no internet)"
+
 msgid "Matar %1 (PID %2) e TODA a sua descendência com SIGKILL?"
 msgstr "Kill %1 (PID %2) and ALL its descendants with SIGKILL?"
 
@@ -1019,6 +1040,12 @@ msgstr "Limits applied to %1 (PID %2) via cgroup."
 
 msgid "Limites removidos de %1 (PID %2)."
 msgstr "Limits removed from %1 (PID %2)."
+
+msgid "Rede cortada para %1."
+msgstr "Network cut for %1."
+
+msgid "Rede restabelecida para %1."
+msgstr "Network restored for %1."
 
 msgid "Escalonamento — %1 (PID %2)"
 msgstr "Scheduling — %1 (PID %2)"
@@ -1145,10 +1172,4 @@ msgstr "Trace"
 
 msgid "rastreando %1 s com eBPF (roda no helper como root)..."
 msgstr "tracing %1 s with eBPF (runs in the helper as root)..."
-
-msgid "Helper privilegiado não instalado. Rode: ./install-helper.sh"
-msgstr "Privileged helper not installed. Run: ./install-helper.sh"
-
-msgid "Autorização negada pelo polkit."
-msgstr "Authorization denied by polkit."
 

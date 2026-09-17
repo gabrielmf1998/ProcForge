@@ -1,5 +1,7 @@
 #include "SystemTabs.h"
 #include "actions/ProcessActions.h"
+#include "core/ProcessIcons.h"
+#include "core/Procfs.h"
 #include "HelperClient.h"
 
 #include <KFormat>
@@ -10,8 +12,10 @@
 #include <QClipboard>
 #include <QDateTime>
 #include <QDialog>
+#include <QDir>
 #include <QFile>
 #include <QFontDatabase>
+#include <QGroupBox>
 #include <QHeaderView>
 #include <QMenu>
 #include <QPlainTextEdit>
@@ -77,6 +81,21 @@ QPair<QString, QString> splitHostPort(const QString &s)
     if (host.startsWith(QLatin1Char('[')) && host.endsWith(QLatin1Char(']')))
         host = host.mid(1, host.size() - 2);
     return {host, s.mid(c + 1)};
+}
+
+// PIDs com "Cortar rede" ativo agora: um .netblock por pid em /run/procforge/
+// (mundialmente legível — ver Helper::echoTo). Fonte da verdade é o próprio
+// helper; a GUI só lê.
+QList<int> blockedPids()
+{
+    QList<int> out;
+    const QDir d(QStringLiteral("/run/procforge"));
+    for (const QString &name : d.entryList({QStringLiteral("*.netblock")}, QDir::Files)) {
+        bool ok = false;
+        const int pid = name.chopped(9).toInt(&ok); // remove ".netblock" (9 chars)
+        if (ok && pid > 0) out.append(pid);
+    }
+    return out;
 }
 
 } // namespace
@@ -217,6 +236,41 @@ NetworkPanel::NetworkPanel(QWidget *parent) : QWidget(parent)
 {
     auto *v = new QVBoxLayout(this);
     v->setContentsMargins(0, 0, 0, 0);
+
+    // ---- processos com "Cortar rede" ativo (só aparece quando há algum) ----
+    m_blockedBox = new QGroupBox(i18n("Processos com a rede cortada"), this);
+    auto *bv = new QVBoxLayout(m_blockedBox);
+    m_blockedTbl = new QTableWidget(0, 3, m_blockedBox);
+    m_blockedTbl->setHorizontalHeaderLabels({i18n("Processo"), i18n("PID"), i18n("Caminho")});
+    m_blockedTbl->verticalHeader()->setVisible(false);
+    m_blockedTbl->setEditTriggers(QAbstractItemView::NoEditTriggers);
+    m_blockedTbl->setSelectionBehavior(QAbstractItemView::SelectRows);
+    m_blockedTbl->setSelectionMode(QAbstractItemView::SingleSelection);
+    m_blockedTbl->horizontalHeader()->setStretchLastSection(true);
+    m_blockedTbl->setMaximumHeight(140);
+    m_blockedTbl->setContextMenuPolicy(Qt::CustomContextMenu);
+    bv->addWidget(m_blockedTbl);
+    v->addWidget(m_blockedBox);
+    m_blockedBox->setVisible(false); // só mostra quando há pelo menos um bloqueado
+
+    connect(m_blockedTbl, &QWidget::customContextMenuRequested, this, [this](const QPoint &p) {
+        const int row = m_blockedTbl->currentRow();
+        if (row < 0 || !m_blockedTbl->item(row, 1)) return;
+        const int pid = m_blockedTbl->item(row, 1)->text().toInt();
+        QMenu menu(this);
+        connect(menu.addAction(i18n("Restabelecer rede")), &QAction::triggered, this, [this, pid]() {
+            procfs::StatFields st;
+            const quint64 starttime = procfs::readStat(pid, st) ? st.starttime : 0;
+            helper::netBlockAsync(pid, starttime, false, this, [this](actions::Result r) {
+                if (!r.ok) KMessageBox::error(this, r.error);
+                else refreshBlocked();
+            });
+        });
+        connect(menu.addAction(i18n("Ir para o processo")), &QAction::triggered, this, [this, pid]{ Q_EMIT goToProcess(pid); });
+        connect(menu.addAction(i18n("Copiar PID")), &QAction::triggered, this, [pid]{ QApplication::clipboard()->setText(QString::number(pid)); });
+        menu.exec(m_blockedTbl->viewport()->mapToGlobal(p));
+    });
+
     m_tbl = new QTableWidget(0, 5, this);
     m_tbl->setHorizontalHeaderLabels({i18n("Proto"), i18n("Estado"),
                                       i18n("Local"), i18n("Remoto"), i18n("Processo")});
@@ -272,8 +326,40 @@ NetworkPanel::NetworkPanel(QWidget *parent) : QWidget(parent)
     auto *t = new QTimer(this);
     t->setInterval(3000);
     connect(t, &QTimer::timeout, this, &NetworkPanel::refresh);
+    connect(t, &QTimer::timeout, this, &NetworkPanel::refreshBlocked);
     t->start();
     refresh();
+    refreshBlocked();
+}
+
+void NetworkPanel::refreshBlocked()
+{
+    const QList<int> pids = blockedPids();
+    m_blockedBox->setVisible(!pids.isEmpty());
+    if (pids.isEmpty()) {
+        m_blockedTbl->setRowCount(0);
+        return;
+    }
+
+    TableGuard g(m_blockedTbl, 1); // chave de seleção pela coluna PID
+    int row = 0;
+    for (int pid : pids) {
+        procfs::StatFields st;
+        if (!procfs::readStat(pid, st))
+            continue; // saiu/morreu; o marcador ainda não foi limpo
+        ProcInfo pi;
+        pi.pid = pid;
+        pi.name = st.comm;
+        pi.cmdline = procfs::cmdlineOf(pid);
+        pi.kernel = pi.cmdline.isEmpty();
+
+        m_blockedTbl->insertRow(row);
+        auto *nameItem = new QTableWidgetItem(proc_icons::iconFor(pi), pi.name);
+        m_blockedTbl->setItem(row, 0, nameItem);
+        m_blockedTbl->setItem(row, 1, new QTableWidgetItem(QString::number(pid)));
+        m_blockedTbl->setItem(row, 2, new QTableWidgetItem(pi.cmdline));
+        ++row;
+    }
 }
 
 void NetworkPanel::refresh()

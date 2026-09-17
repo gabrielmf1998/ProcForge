@@ -26,6 +26,8 @@ private:
 
 // Aba Rede: conexões (ss), ordenável e estável. Ações: matar dono, fechar a
 // conexão específica (ss -K via pkexec), copiar PID, ir para o processo.
+// Também lista os processos com a rede cortada (Cortar rede.../menu de
+// contexto da lista de processos), com ícone/nome/caminho e "Restabelecer".
 class NetworkPanel : public QWidget {
     Q_OBJECT
 public:
@@ -34,8 +36,11 @@ Q_SIGNALS:
     void goToProcess(int pid);
 private Q_SLOTS:
     void refresh();
+    void refreshBlocked();
 private:
     QTableWidget *m_tbl = nullptr;
+    class QGroupBox *m_blockedBox = nullptr;
+    QTableWidget *m_blockedTbl = nullptr;
 };
 
 // Aba Disco: throughput por dispositivo (/proc/diskstats), ordenável e estável.
