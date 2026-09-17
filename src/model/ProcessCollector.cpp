@@ -25,8 +25,15 @@ void ProcessCollector::start(int intervalMs)
 
 void ProcessCollector::setInterval(int intervalMs)
 {
-    if (m_timer)
-        m_timer->setInterval(intervalMs);
+    if (!m_timer)
+        return;
+    if (intervalMs <= 0) {
+        m_timer->stop();          // 0 = parado (manual): só via scanOnce() explícito
+        return;
+    }
+    m_timer->setInterval(intervalMs);
+    if (!m_timer->isActive())
+        m_timer->start(intervalMs);
 }
 
 void ProcessCollector::scanOnce()

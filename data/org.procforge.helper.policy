@@ -138,6 +138,15 @@
     </defaults>
   </action>
 
+  <action id="org.procforge.net.block">
+    <description>Cortar/restaurar toda a rede de um processo</description>
+    <message>Autenticação necessária para cortar/restaurar a rede de um processo</message>
+    <defaults>
+      <allow_any>no</allow_any><allow_inactive>no</allow_inactive>
+      <allow_active>auth_admin_keep</allow_active>
+    </defaults>
+  </action>
+
   <action id="org.procforge.process.launch">
     <description>Criar um novo processo como outro usuário (Executar como…)</description>
     <message>Autenticação necessária para executar um programa como outro usuário</message>

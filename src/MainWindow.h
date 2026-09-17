@@ -1,5 +1,6 @@
 #pragma once
 #include "core/ProcInfo.h"
+#include <QElapsedTimer>
 #include <QMainWindow>
 #include <QMap>
 
@@ -7,16 +8,21 @@ class QTreeView;
 class QLineEdit;
 class QLabel;
 class QThread;
+class QCloseEvent;
 class ProcessModel;
 class ProcessFilterProxy;
 class ProcessCollector;
 class DetailPanel;
+class TrayIcon;
 
 class MainWindow : public QMainWindow {
     Q_OBJECT
 public:
     explicit MainWindow(QWidget *parent = nullptr);
     ~MainWindow() override;
+
+protected:
+    void closeEvent(QCloseEvent *event) override;
 
 private Q_SLOTS:
     void onSnapshot(const QList<ProcInfo> &procs);
@@ -35,6 +41,7 @@ private:
     void     injectCurrent();
     void     cgroupLimitCurrent();
     void     cgroupReleaseCurrent();
+    void     netBlockCurrent(bool block);
     void     schedCurrent();
     void     prlimitCurrent();
     void     threadsCurrent();
@@ -71,4 +78,8 @@ private:
     QThread             *m_collectorThread = nullptr;
     class QTimer        *m_eventDebounce = nullptr;
     bool                 m_subscribed = false;
+    int                  m_currentIntervalMs = 1000;  // 0 = parado (manual)
+    QElapsedTimer        m_lastScanTimer;              // p/ eventos cn_proc respeitarem o intervalo
+
+    TrayIcon            *m_tray = nullptr;
 };

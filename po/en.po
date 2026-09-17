@@ -3,51 +3,6 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Language: en\n"
 
-msgid "Executando"
-msgstr "Running"
-
-msgid "Dormindo"
-msgstr "Sleeping"
-
-msgid "Espera ininterrupta (D)"
-msgstr "Uninterruptible sleep (D)"
-
-msgid "Zumbi"
-msgstr "Zombie"
-
-msgid "Parado (stopped)"
-msgstr "Stopped"
-
-msgid "Rastreado (traced)"
-msgstr "Traced"
-
-msgid "Morto"
-msgstr "Dead"
-
-msgid "Ocioso (kernel)"
-msgstr "Idle (kernel)"
-
-msgid "Nome"
-msgstr "Name"
-
-msgid "PID"
-msgstr "PID"
-
-msgid "CPU"
-msgstr "CPU"
-
-msgid "I/O total"
-msgstr "I/O total"
-
-msgid "Bytes privados"
-msgstr "Private bytes"
-
-msgid "Usuário"
-msgstr "User"
-
-msgid "Descrição"
-msgstr "Description"
-
 msgid "O processo %1 não existe mais."
 msgstr "Process %1 no longer exists."
 
@@ -80,6 +35,54 @@ msgstr "Failed to set I/O priority: %1"
 
 msgid "Falha ao definir limite: %1"
 msgstr "Failed to set limit: %1"
+
+msgid "Executando"
+msgstr "Running"
+
+msgid "Dormindo"
+msgstr "Sleeping"
+
+msgid "Espera ininterrupta (D)"
+msgstr "Uninterruptible sleep (D)"
+
+msgid "Zumbi"
+msgstr "Zombie"
+
+msgid "Parado (stopped)"
+msgstr "Stopped"
+
+msgid "Rastreado (traced)"
+msgstr "Traced"
+
+msgid "Morto"
+msgstr "Dead"
+
+msgid "Ocioso (kernel)"
+msgstr "Idle (kernel)"
+
+msgid "Atualização disponível"
+msgstr "Update available"
+
+msgid "ProcForge %1 disponível — clique para abrir."
+msgstr "ProcForge %1 available — click to open."
+
+msgid "Você já está na versão mais recente."
+msgstr "You're already on the latest version."
+
+msgid "Falha ao verificar atualizações: %1"
+msgstr "Failed to check for updates: %1"
+
+msgid "Abrir ProcForge"
+msgstr "Open ProcForge"
+
+msgid "Verificar atualizações"
+msgstr "Check for updates"
+
+msgid "Iniciar com o sistema"
+msgstr "Start with the system"
+
+msgid "Sair"
+msgstr "Quit"
 
 msgid "Alvo inválido."
 msgstr "Invalid target."
@@ -116,6 +119,27 @@ msgstr "pidfd_open failed: %1"
 
 msgid "pidfd_getfd falhou: %1"
 msgstr "pidfd_getfd failed: %1"
+
+msgid "Nome"
+msgstr "Name"
+
+msgid "PID"
+msgstr "PID"
+
+msgid "CPU"
+msgstr "CPU"
+
+msgid "I/O total"
+msgstr "I/O total"
+
+msgid "Bytes privados"
+msgstr "Private bytes"
+
+msgid "Usuário"
+msgstr "User"
+
+msgid "Descrição"
+msgstr "Description"
 
 msgid "FD"
 msgstr "FD"
@@ -189,105 +213,6 @@ msgstr "close(%1) executed in target (return %2)."
 msgid "fd %1 duplicado para nós via pidfd_getfd (fd local %2). O fd do dono continua aberto."
 msgstr "fd %1 duplicated to us via pidfd_getfd (local fd %2). The owner's fd stays open."
 
-msgid "Unidade"
-msgstr "Unit"
-
-msgid "Carregada"
-msgstr "Loaded"
-
-msgid "Ativa"
-msgstr "Active"
-
-msgid "Sub"
-msgstr "Sub"
-
-msgid "Ativação"
-msgstr "Startup"
-
-msgid "Iniciar"
-msgstr "Start"
-
-msgid "Parar"
-msgstr "Stop"
-
-msgid "Reiniciar"
-msgstr "Restart"
-
-msgid "Recarregar"
-msgstr "Reload"
-
-msgid "Habilitar (no boot)"
-msgstr "Enable (on boot)"
-
-msgid "Desabilitar (no boot)"
-msgstr "Disable (on boot)"
-
-msgid "Mascarar"
-msgstr "Mask"
-
-msgid "Desmascarar"
-msgstr "Unmask"
-
-msgid "Status / journal..."
-msgstr "Status / journal..."
-
-msgid "Ir para o processo"
-msgstr "Go to process"
-
-msgid "Status — %1"
-msgstr "Status — %1"
-
-msgid "(sem saída)"
-msgstr "(no output)"
-
-msgid "O serviço %1 não tem processo principal em execução."
-msgstr "Service %1 has no running main process."
-
-msgid "Proto"
-msgstr "Proto"
-
-msgid "Estado"
-msgstr "State"
-
-msgid "Local"
-msgstr "Local"
-
-msgid "Remoto"
-msgstr "Remote"
-
-msgid "Processo"
-msgstr "Process"
-
-msgid "Fechar esta conexão (ss -K)"
-msgstr "Close this connection (ss -K)"
-
-msgid "Não consegui montar o filtro da conexão."
-msgstr "Could not build the connection filter."
-
-msgid "Matar processo (SIGTERM)"
-msgstr "Kill process (SIGTERM)"
-
-msgid "Matar processo (SIGKILL)"
-msgstr "Kill process (SIGKILL)"
-
-msgid "Copiar PID"
-msgstr "Copy PID"
-
-msgid "Dispositivo"
-msgstr "Device"
-
-msgid "Leitura/s"
-msgstr "Read/s"
-
-msgid "Escrita/s"
-msgstr "Write/s"
-
-msgid "Lido (total)"
-msgstr "Read (total)"
-
-msgid "Escrito (total)"
-msgstr "Written (total)"
-
 msgid "Propriedades — %1 (PID %2)"
 msgstr "Properties — %1 (PID %2)"
 
@@ -317,6 +242,9 @@ msgstr "Memory"
 
 msgid "PID pai"
 msgstr "Parent PID"
+
+msgid "Estado"
+msgstr "State"
 
 msgid "Iniciado"
 msgstr "Started"
@@ -449,6 +377,102 @@ msgstr "Context switches (involuntary)"
 
 msgid "  [suspensa]"
 msgstr "  [suspended]"
+
+msgid "Unidade"
+msgstr "Unit"
+
+msgid "Carregada"
+msgstr "Loaded"
+
+msgid "Ativa"
+msgstr "Active"
+
+msgid "Sub"
+msgstr "Sub"
+
+msgid "Ativação"
+msgstr "Startup"
+
+msgid "Iniciar"
+msgstr "Start"
+
+msgid "Parar"
+msgstr "Stop"
+
+msgid "Reiniciar"
+msgstr "Restart"
+
+msgid "Recarregar"
+msgstr "Reload"
+
+msgid "Habilitar (no boot)"
+msgstr "Enable (on boot)"
+
+msgid "Desabilitar (no boot)"
+msgstr "Disable (on boot)"
+
+msgid "Mascarar"
+msgstr "Mask"
+
+msgid "Desmascarar"
+msgstr "Unmask"
+
+msgid "Status / journal..."
+msgstr "Status / journal..."
+
+msgid "Ir para o processo"
+msgstr "Go to process"
+
+msgid "Status — %1"
+msgstr "Status — %1"
+
+msgid "(sem saída)"
+msgstr "(no output)"
+
+msgid "O serviço %1 não tem processo principal em execução."
+msgstr "Service %1 has no running main process."
+
+msgid "Proto"
+msgstr "Proto"
+
+msgid "Local"
+msgstr "Local"
+
+msgid "Remoto"
+msgstr "Remote"
+
+msgid "Processo"
+msgstr "Process"
+
+msgid "Fechar esta conexão (ss -K)"
+msgstr "Close this connection (ss -K)"
+
+msgid "Não consegui montar o filtro da conexão."
+msgstr "Could not build the connection filter."
+
+msgid "Matar processo (SIGTERM)"
+msgstr "Kill process (SIGTERM)"
+
+msgid "Matar processo (SIGKILL)"
+msgstr "Kill process (SIGKILL)"
+
+msgid "Copiar PID"
+msgstr "Copy PID"
+
+msgid "Dispositivo"
+msgstr "Device"
+
+msgid "Leitura/s"
+msgstr "Read/s"
+
+msgid "Escrita/s"
+msgstr "Write/s"
+
+msgid "Lido (total)"
+msgstr "Read (total)"
+
+msgid "Escrito (total)"
+msgstr "Written (total)"
 
 msgid "Scanner de memória — %1 (PID %2)"
 msgstr "Memory scanner — %1 (PID %2)"
@@ -645,12 +669,6 @@ msgstr "Region freed."
 msgid "munmap falhou: %1"
 msgstr "munmap failed: %1"
 
-msgid "Helper privilegiado não instalado. Rode: ./install-helper.sh"
-msgstr "Privileged helper not installed. Run: ./install-helper.sh"
-
-msgid "Autorização negada pelo polkit."
-msgstr "Authorization denied by polkit."
-
 msgid "Processos"
 msgstr "Processes"
 
@@ -680,9 +698,6 @@ msgstr "System information..."
 
 msgid "Opções..."
 msgstr "Options..."
-
-msgid "Sair"
-msgstr "Quit"
 
 msgid "&Ver"
 msgstr "&View"
@@ -1130,4 +1145,10 @@ msgstr "Trace"
 
 msgid "rastreando %1 s com eBPF (roda no helper como root)..."
 msgstr "tracing %1 s with eBPF (runs in the helper as root)..."
+
+msgid "Helper privilegiado não instalado. Rode: ./install-helper.sh"
+msgstr "Privileged helper not installed. Run: ./install-helper.sh"
+
+msgid "Autorização negada pelo polkit."
+msgstr "Authorization denied by polkit."
 

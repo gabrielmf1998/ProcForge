@@ -1,5 +1,5 @@
 Name:           procforge
-Version:        0.1.1
+Version:        0.3.0
 Release:        1%{?dist}
 Summary:        Clone do Process Hacker para Linux — manipulação ativa de processos, memória e sistema
 
@@ -29,6 +29,7 @@ Recommends:     iproute
 Recommends:     util-linux
 Recommends:     libcap
 Recommends:     kwin-wayland
+Recommends:     iptables
 
 %description
 ProcForge é uma reimplementação independente do Process Hacker / System Informer
@@ -58,7 +59,7 @@ com polkit por AÇÃO e capabilities mínimas.
 touch --no-create %{_datadir}/icons/hicolor &>/dev/null || :
 
 %postun
-%systemd_postun procforged.service
+%systemd_postun_with_restart procforged.service
 if [ $1 -eq 0 ] ; then
     touch --no-create %{_datadir}/icons/hicolor &>/dev/null
     gtk-update-icon-cache %{_datadir}/icons/hicolor &>/dev/null || :
@@ -81,6 +82,30 @@ gtk-update-icon-cache %{_datadir}/icons/hicolor &>/dev/null || :
 %{_datadir}/locale/en/LC_MESSAGES/procforge.mo
 
 %changelog
+* Thu Sep 17 2026 Gabriel (kxinha) <gabriel17166@gmail.com> - 0.3.0-1
+- Cortar/restabelecer TODA a rede de um processo (menu de contexto): DROP via
+  iptables+ip6tables casando pelo cgroup v2 (`-m cgroup --path`), reaproveita o
+  mesmo leaf do "Limitar recursos" quando ambos estão ativos no mesmo processo
+  (cgroup v2 só permite um cgroup por vez). Action polkit `net.block`.
+- Corrigido: "Intervalo de atualização" não tinha opção de parar, e eventos de
+  processo em tempo real (cn_proc) disparavam rescans bem mais rápido que o
+  intervalo configurado em sistemas com bastante atividade — travava a seleção
+  de processos. Adicionado "Parar (manual)"; eventos em tempo real agora
+  respeitam o intervalo como piso (com resposta rápida só se o sistema estava
+  ocioso).
+
+* Thu Sep 17 2026 Gabriel (kxinha) <gabriel17166@gmail.com> - 0.2.0-1
+- Ícone na bandeja do sistema (QSystemTrayIcon): reabrir a janela, checar
+  atualizações (GitHub + GitLab releases) e alternar "iniciar com o sistema"
+  (entrada XDG autostart). Fechar a janela agora minimiza para a bandeja;
+  "Sair" (menu Hacker ou tray) encerra de verdade. Novo flag --tray para abrir
+  já minimizado (usado pela entrada de autostart). Requer Qt6Network.
+- Corrigido: Renice/SetAffinity/ReadMem/WriteMem no helper não validavam
+  (pid, starttime) contra reuso de PID como todo o resto das ações
+  privilegiadas; Renice/SetAffinity via helper também tinham descasamento de
+  assinatura D-Bus com o cliente assíncrono e sempre falhavam (elevar
+  prioridade ou mudar afinidade de processo de outro usuário não funcionava).
+
 * Fri Aug 14 2026 Gabriel (kxinha) <gabriel17166@gmail.com> - 0.1.1-1
 - Ícone definitivo do app (monitor/EKG) em PNG nos tamanhos do tema hicolor;
   atualização do cache de ícones no pós-instalação.

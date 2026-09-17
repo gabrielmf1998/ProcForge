@@ -2,7 +2,63 @@
 
 Fases 0-4 completas. Clone funcional do Process Hacker, muito além do básico.
 
-## Feito nesta rodada
+## Feito nesta rodada (0.3.0)
+- **Cortar/restabelecer rede de um processo** (menu de contexto): novo método
+  `NetBlock` no helper — DROP via `iptables`/`ip6tables` casando pelo cgroup v2
+  (`-m cgroup --path`), nas chains OUTPUT e INPUT. Reaproveita a MESMA
+  infraestrutura de leaf do "Limitar recursos" (`ensureLeaf`/`releaseLeaf`
+  extraídos de `CgroupThrottle`/`CgroupRelease`): cgroup v2 só permite um
+  cgroup por processo, então throttle e bloqueio de rede precisam do mesmo
+  leaf quando os dois estão ativos — `CgroupThrottle` agora reaproveita um
+  leaf já existente em vez de tentar mover o processo de novo, e
+  `CgroupRelease` não derruba o leaf se o bloqueio de rede ainda precisar
+  dele (só zera os limites de recurso). Testado ao vivo (não só em
+  container): `iptables -m cgroup --path` confirmado funcionando no kernel
+  6.17/Fedora 43 antes de entrar no helper. Action polkit `net.block`
+  (`auth_admin_keep`, mesmo nível de `cgroup.move`).
+- **Corrigido — "Intervalo de atualização" sem stop e não respeitava os
+  segundos**: eventos de processo em tempo real (`cn_proc`) disparavam um
+  rescan a cada fork/exec/exit do SISTEMA INTEIRO com um debounce fixo de
+  60ms, incondicional ao valor escolhido no menu — num desktop real e ativo
+  isso significa rescans muito mais frequentes que "5 s", resetando a
+  seleção da árvore e impedindo cliques. Agora o intervalo configurado é o
+  piso: eventos em tempo real só disparam rescan imediato se já fazia
+  tempo ocioso, senão esperam o que falta do intervalo. Adicionada opção
+  **"Parar (manual)"** (0 ms) no menu Ver e nas Opções — desliga tanto o
+  polling quanto os rescans por evento; só atualiza no F5/Atualizar manual.
+
+## Rodada anterior (0.2.0)
+- **Ícone na bandeja** (`core/TrayIcon`): reabrir a janela, checar atualização
+  e alternar autostart. Fechar a janela (X) minimiza para a bandeja em vez de
+  encerrar; "Sair" (menu Hacker ou tray) é que realmente fecha o app —
+  `QApplication::setQuitOnLastWindowClosed(false)` evita que uma janela
+  secundária (Propriedades, Scanner) fechando mate o app com a bandeja ainda
+  ativa. Flag `--tray` (usado pela entrada de autostart) abre só na bandeja.
+- **Verificar atualizações** (`core/UpdateChecker`): consulta assíncrona
+  (Qt Network) à última release no GitHub e no GitLab em paralelo, compara com
+  `QApplication::applicationVersion()` via `QVersionNumber`. Checagem
+  silenciosa ao iniciar (só notifica se houver versão nova) + item de menu
+  manual (sempre mostra o resultado). Clicar na notificação abre a release no
+  navegador — **não baixa/instala nada sozinho** (decisão deliberada: o
+  helper privilegiado e a unit systemd não devem ser trocados sem o usuário
+  rodar o instalador conscientemente).
+- **Iniciar com o sistema** (`core/Autostart`): entrada XDG em
+  `~/.config/autostart`, fonte da verdade é o próprio arquivo (sem duplicar
+  estado em QSettings).
+- **Correção de segurança**: `Renice`/`SetAffinity`/`ReadMem`/`WriteMem` no
+  helper eram os 4 únicos métodos privilegiados que não validavam
+  `(pid, starttime)` contra reuso de PID (todo o resto do helper trata isso
+  como invariante). `Renice`/`SetAffinity` também tinham descasamento de
+  assinatura D-Bus com o cliente assíncrono (`reniceAsync`/`setAffinityAsync`
+  já mandavam `starttime`, o helper não aceitava) — elevar prioridade ou
+  mudar afinidade de processo de outro usuário sempre falhava. Corrigido nos
+  4 métodos; removidos os wrappers síncronos mortos `helper::renice`/
+  `helper::setAffinity` (não tinham chamador — só as versões `*Async` são
+  usadas na UI).
+- Versão bumpada para 0.2.0 (CMakeLists, `applicationVersion`, `.spec`) —
+  necessário para o UpdateChecker comparar corretamente contra a próxima tag.
+
+## Rodada anterior (0.1.1)
 - **"Executar como…" (Run as)** — o ProcForge agora CRIA processos, não só
   manipula os existentes. Método privilegiado `LaunchProcess` (helper): novo
   processo como outro usuário (uid/gid + initgroups), com cwd, nice e afinidade,

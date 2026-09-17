@@ -15,11 +15,9 @@ namespace helper {
 bool available();   // helper instalado/ativável no barramento de sistema?
 
 actions::Result sendSignal(int pid, quint64 starttime, int sig);
-actions::Result renice(int pid, int nice);
-actions::Result setAffinity(int pid, const QList<int> &cpus);
 
-QByteArray      readMem(int pid, quint64 addr, int len, bool *ok);
-actions::Result writeMem(int pid, quint64 addr, const QByteArray &bytes);
+QByteArray      readMem(int pid, quint64 starttime, quint64 addr, int len, bool *ok);
+actions::Result writeMem(int pid, quint64 starttime, quint64 addr, const QByteArray &bytes);
 
 actions::Result injectLibrary(int pid, quint64 starttime, const QString &path);
 actions::Result cgroupThrottle(int pid, quint64 starttime, int cpuPercent,
@@ -58,6 +56,7 @@ void injectLibraryAsync(int pid, quint64 starttime, const QString &path, QObject
 void cgroupThrottleAsync(int pid, quint64 starttime, int cpuPercent, quint64 memMaxBytes,
                          quint64 pidsMax, quint64 ioMaxBps, QObject *ctx, ResultCb cb);
 void cgroupReleaseAsync(int pid, quint64 starttime, QObject *ctx, ResultCb cb);
+void netBlockAsync(int pid, quint64 starttime, bool block, QObject *ctx, ResultCb cb);
 
 // Retornam texto (err vazio em sucesso), assíncronos.
 using StrCb = std::function<void(const QString &out, const QString &err)>;

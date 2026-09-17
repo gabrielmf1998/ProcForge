@@ -19,8 +19,7 @@ public:
     void setFilterText(const QString &t)
     {
         m_text = t.trimmed();
-        beginFilterChange();
-        endFilterChange(QSortFilterProxyModel::Direction::Rows);
+        invalidateFilter();
     }
 
 protected:

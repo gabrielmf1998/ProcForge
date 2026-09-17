@@ -1,0 +1,41 @@
+Source: procforge
+Section: utils
+Priority: optional
+Maintainer: Gabriel (kxinha) <gabriel17166@gmail.com>
+Build-Depends: debhelper-compat (= 13),
+               cmake,
+               ninja-build,
+               extra-cmake-modules,
+               gettext,
+               qt6-base-dev,
+               libkf6coreaddons-dev,
+               libkf6i18n-dev,
+               libkf6widgetsaddons-dev
+Standards-Version: 4.6.2
+Homepage: https://github.com/gabrielmf1998/ProcForge
+Rules-Requires-Root: no
+
+Package: procforge
+Architecture: amd64
+Depends: ${shlibs:Depends},
+         ${misc:Depends},
+         policykit-1 | polkitd,
+         hicolor-icon-theme
+Recommends: bpftrace,
+            iproute2,
+            util-linux,
+            libcap2-bin,
+            iptables
+Suggests: kwin-wayland
+Description: Clone do Process Hacker para Linux
+ ProcForge é uma reimplementação independente do Process Hacker / System
+ Informer para Linux, com GUI nativa Qt6 / KDE Frameworks 6 em Wayland.
+ Diferente de um monitor, ele manipula o sistema em tempo real: sinais e
+ suspend/resume, kill de árvore, renice/afinidade/escalonamento/ionice/
+ prlimit, scanner e editor de memória (estilo Cheat Engine), injeção de
+ biblioteca (dlopen via ptrace), fechar descritores alheios, limitar
+ CPU/RAM/PIDs/I/O ao vivo via cgroups v2, rastreamento eBPF por processo,
+ entrar em namespaces de containers, e manipular janelas via KWin scripting.
+ .
+ A GUI nunca roda como root: ações privilegiadas passam por um helper D-Bus
+ de sistema com polkit por ação e capabilities mínimas.

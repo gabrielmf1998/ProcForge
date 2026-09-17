@@ -418,6 +418,21 @@ T = {
     "  [suspensa]": "  [suspended]",
     "ProcForge — clone do Process Hacker para Linux.\n\nManipulação ativa do sistema sobre primitivas nativas: procfs, pidfd, ptrace, process_vm_readv/writev, cgroups v2, netlink, eBPF, KWin, com helper D-Bus privilegiado e polkit por ação.\n\nQt6 · KDE Frameworks 6 · Wayland.":
         "ProcForge — a Process Hacker clone for Linux.\n\nActive system manipulation over native primitives: procfs, pidfd, ptrace, process_vm_readv/writev, cgroups v2, netlink, eBPF, KWin, with a privileged D-Bus helper and per-action polkit.\n\nQt6 · KDE Frameworks 6 · Wayland.",
+    "Abrir ProcForge": "Open ProcForge",
+    "Verificar atualizações": "Check for updates",
+    "Iniciar com o sistema": "Start with the system",
+    "Atualização disponível": "Update available",
+    "ProcForge %1 disponível — clique para abrir.": "ProcForge %1 available — click to open.",
+    "Você já está na versão mais recente.": "You're already on the latest version.",
+    "Falha ao verificar atualizações: %1": "Failed to check for updates: %1",
+    "Não consegui consultar GitHub/GitLab.": "Could not reach GitHub/GitLab.",
+    "Parar (manual)": "Stop (manual)",
+    "Cortar rede (sem internet)": "Cut network (no internet)",
+    "Restabelecer rede": "Restore network",
+    "Rede cortada para %1.": "Network cut for %1.",
+    "Rede restabelecida para %1.": "Network restored for %1.",
+    "Não consegui isolar o processo num cgroup.": "Could not isolate the process into a cgroup.",
+    "iptables não encontrado (instale o pacote iptables).": "iptables not found (install the iptables package).",
 }
 
 ids = parse_ids('po/procforge.pot')

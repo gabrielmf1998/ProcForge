@@ -22,6 +22,9 @@ Não é um visualizador. É uma ferramenta de **manipulação e controle ativos*
 - [Instalação](#instalação)
   - [Instalação num comando (curl)](#instalação-num-comando-curl)
   - [Pacote RPM (Fedora / Nobara / Bazzite)](#pacote-rpm-fedora--nobara--bazzite)
+  - [Pacote .deb (Debian / Ubuntu)](#pacote-deb-debian--ubuntu)
+  - [Pacote Arch Linux (PKGBUILD)](#pacote-arch-linux-pkgbuild)
+  - [AppImage (qualquer distro com KDE Plasma)](#appimage-qualquer-distro-com-kde-plasma)
   - [A partir do código-fonte](#a-partir-do-código-fonte)
 - [Requisitos](#requisitos)
 - [Arquitetura e segurança](#arquitetura-e-segurança)
@@ -71,6 +74,7 @@ No Windows, o Process Hacker precisa de um **driver em kernel mode** porque o SO
 
 **cgroup-bisturi (além do Windows)**
 - Limite **ao vivo** de **CPU %, RAM, PIDs e I/O de disco** de um processo, sem reiniciá-lo. Restaura ao scope de origem ao remover.
+- **Cortar/restabelecer toda a rede de um processo** (menu de contexto): útil pra diagnosticar se um app se comporta diferente sem internet, sem precisar desconectar a máquina inteira. DROP via `iptables`/`ip6tables` casando pelo cgroup do processo — reaproveita o mesmo cgroup do limite de recursos quando os dois estão ativos.
 
 **eBPF, namespaces e janelas**
 - **eBPF por processo** (via bpftrace): contagem de syscalls, arquivos abertos, conexões TCP.
@@ -84,6 +88,8 @@ No Windows, o Process Hacker precisa de um **driver em kernel mode** porque o SO
 
 **Interface**
 - Qt6 / KDE Frameworks 6, **Wayland puro**, **pt-BR e en_US**, temas **Sistema / Claro / Escuro / Clássico (Process Hacker)**, tabelas ordenáveis e estáveis (sem "pulo" ao atualizar).
+- **Ícone na bandeja do sistema**: reabrir a janela (fechar só minimiza), **verificar atualizações** (consulta assíncrona ao GitHub e ao GitLab, notifica se houver release mais nova e abre a página no navegador — não baixa nem instala nada sozinho) e alternar **iniciar com o sistema** (entrada XDG autostart).
+- **Intervalo de atualização** com opção **Parar (manual)** — desliga o polling e os rescans por evento em tempo real, só atualiza no F5. Com o intervalo ativo, eventos em tempo real (cn_proc) respeitam o valor escolhido como piso, em vez de disparar rescans soltos toda hora num sistema ocupado.
 
 ## Instalação
 
@@ -114,6 +120,55 @@ sudo dnf install ./procforge-*.rpm
 # Bazzite e outros atômicos (rpm-ostree) — requer reboot
 rpm-ostree install ./procforge-*.rpm && systemctl reboot
 ```
+
+A spec fica em [`packaging/procforge.spec`](packaging/procforge.spec); para gerar o `.rpm` você mesmo:
+
+```bash
+rpmbuild -ba packaging/procforge.spec   # com o tarball procforge-<versão>.tar.gz em ~/rpmbuild/SOURCES
+```
+
+### Pacote .deb (Debian / Ubuntu)
+
+Baixe o `.deb` da página de [Releases](https://github.com/gabrielmf1998/ProcForge/releases) e:
+
+```bash
+sudo apt install ./procforge_*_amd64.deb
+```
+
+Empacotamento em [`debian/`](debian/) (padrão debhelper/dpkg-buildpackage). Requer uma versão do
+Debian/Ubuntu com **KDE Frameworks 6** nos repositórios (Debian 13 "trixie"+, Ubuntu 24.10+); em
+versões mais antigas (sem KF6) use o AppImage. Para gerar o `.deb` você mesmo:
+
+```bash
+sudo apt build-dep .   # ou instale as Build-Depends listadas em debian/control
+dpkg-buildpackage -b -uc -us
+```
+
+### Pacote Arch Linux (PKGBUILD)
+
+`PKGBUILD` em [`packaging/PKGBUILD`](packaging/PKGBUILD):
+
+```bash
+cd packaging
+makepkg -si   # compila e instala; pede sudo só para os pacotes de dependência
+```
+
+### AppImage (qualquer distro com KDE Plasma)
+
+Baixe o `.AppImage` da página de [Releases](https://github.com/gabrielmf1998/ProcForge/releases):
+
+```bash
+chmod +x ProcForge-*.AppImage
+./ProcForge-*.AppImage
+```
+
+Não precisa instalar nada — roda em qualquer distro Linux com KDE Plasma 6 / Wayland. **Ressalva
+importante:** o AppImage empacota só a GUI (`procforge`). O helper privilegiado (`procforged`) —
+que faz sinais/renice/afinidade em processo alheio, leitura/escrita de memória, injeção, cgroups,
+namespaces e eBPF — precisa de arquivos instalados em caminhos fixos do sistema (unit systemd,
+policy do polkit, config do D-Bus) e **não cabe dentro de um AppImage portátil**. Rodar o AppImage
+sem o helper instalado dá acesso completo aos **seus próprios processos** (mesmo uid); ações sobre
+processos de outro usuário/root pedem `./install-helper.sh` (ou um dos pacotes acima) à parte.
 
 ### A partir do código-fonte
 
@@ -157,6 +212,7 @@ O split resolve a segurança de memória de forma limpa: quem escreve na memóri
 - **Duplo-clique**: abre o inspetor de **Propriedades** (7 abas).
 - **Abas** no topo: Processos, Serviços, Rede, Disco.
 - Ações em processos de **outro usuário/root** disparam o **diálogo do polkit**.
+- **Fechar a janela** minimiza para a **bandeja** (não encerra o ProcForge); **Sair** é que fecha de verdade — pelo menu Hacker ou pelo menu do ícone na bandeja.
 
 ## Idiomas e temas
 
@@ -166,7 +222,7 @@ O split resolve a segurança de memória de forma limpa: quem escreve na memóri
 
 ## Estado do projeto
 
-Projeto pessoal, funcional e em evolução. Fases 0→4 completas (lista de processos e manipulação, helper D-Bus + polkit, scanner de memória, injeção + cgroup + eBPF + namespaces + cn_proc + janelas). Débitos técnicos e ideias em [`docs/STATUS.md`](docs/STATUS.md).
+Projeto pessoal, funcional e em evolução. Fases 0→4 completas (lista de processos e manipulação, helper D-Bus + polkit, scanner de memória, injeção + cgroup + eBPF + namespaces + cn_proc + janelas), mais ícone de bandeja com verificação de atualização e autostart, e empacotamento para RPM/.deb/Arch/AppImage. Débitos técnicos e ideias em [`docs/STATUS.md`](docs/STATUS.md).
 
 ## Licença e créditos
 

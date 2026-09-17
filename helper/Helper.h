@@ -25,10 +25,10 @@ Q_SIGNALS:
 public Q_SLOTS:
     QString    Ping();
     void       SendSignal(uint pid, qulonglong starttime, int sig);
-    void       Renice(uint pid, int nice);
-    void       SetAffinity(uint pid, const QList<uint> &cpus);
-    QByteArray ReadMem(uint pid, qulonglong addr, uint len);
-    void       WriteMem(uint pid, qulonglong addr, const QByteArray &bytes);
+    void       Renice(uint pid, qulonglong starttime, int nice);
+    void       SetAffinity(uint pid, qulonglong starttime, const QList<uint> &cpus);
+    QByteArray ReadMem(uint pid, qulonglong starttime, qulonglong addr, uint len);
+    void       WriteMem(uint pid, qulonglong starttime, qulonglong addr, const QByteArray &bytes);
     void       InjectLibrary(uint pid, qulonglong starttime, const QString &path);
     // Manipulação de páginas de memória do alvo (mmap/mprotect/munmap via ptrace).
     qulonglong AllocMem(uint pid, qulonglong starttime, qulonglong length, int prot);
@@ -43,6 +43,8 @@ public Q_SLOTS:
     void       CgroupThrottle(uint pid, qulonglong starttime, int cpuPercent,
                               qulonglong memMaxBytes, qulonglong pidsMax, qulonglong ioMaxBps);
     void       CgroupRelease(uint pid, qulonglong starttime);
+    // Corta/restaura TODA a rede do processo (iptables+ip6tables por cgroup v2).
+    void       NetBlock(uint pid, qulonglong starttime, bool block);
     void       SetScheduler(uint pid, qulonglong starttime, int policy, int rtPriority);
     void       SetIoPrio(uint pid, qulonglong starttime, int ioClass, int prio);
     void       SetRlimit(uint pid, qulonglong starttime, int resource,

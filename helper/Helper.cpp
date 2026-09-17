@@ -10,6 +10,7 @@
 #include <QDBusServiceWatcher>
 #include <QDir>
 #include <QFile>
+#include <QStandardPaths>
 #include <QStringList>
 #include <QVector>
 
@@ -40,9 +41,12 @@ extern "C" ssize_t pf_write_mem(int pid, std::uint64_t addr, const std::uint8_t 
 
 namespace {
 // Escreve um valor num arquivo de controle (cgroup) com uma única write().
+// O_CREAT é essencial pros marcadores em /run/procforge/<pid> (arquivos NOVOS,
+// não pré-existentes como os control files de cgroup); é um no-op inofensivo
+// quando o arquivo já existe.
 bool echoTo(const QString &path, const QByteArray &v, QString *err)
 {
-    const int fd = ::open(path.toLocal8Bit().constData(), O_WRONLY | O_CLOEXEC);
+    const int fd = ::open(path.toLocal8Bit().constData(), O_WRONLY | O_CREAT | O_CLOEXEC, 0644);
     if (fd < 0) { if (err) *err = QString::fromUtf8(::strerror(errno)); return false; }
     const ssize_t n = ::write(fd, v.constData(), v.size());
     const int e = errno;
@@ -78,7 +82,7 @@ void applyCgroupLimits(const QString &leaf, int cpuPercent, qulonglong memMax,
     if (QFile::exists(leaf + QStringLiteral("/pids.max")))
         echoTo(leaf + QStringLiteral("/pids.max"),
                pidsMax > 0 ? QByteArray::number(qulonglong(pidsMax)) : QByteArray("max"), &err);
-    if (ioMaxBps > 0 && QFile::exists(leaf + QStringLiteral("/io.max"))) {
+    if (QFile::exists(leaf + QStringLiteral("/io.max"))) {
         const QStringList devs = QDir(QStringLiteral("/sys/block"))
                                      .entryList(QDir::Dirs | QDir::NoDotAndDotDot);
         for (const QString &dev : devs) {
@@ -86,9 +90,112 @@ void applyCgroupLimits(const QString &leaf, int cpuPercent, qulonglong memMax,
             if (!df.open(QIODevice::ReadOnly)) continue;
             const QString majmin = QString::fromUtf8(df.readAll()).trimmed();
             echoTo(leaf + QStringLiteral("/io.max"),
-                   QStringLiteral("%1 rbps=%2 wbps=%2").arg(majmin).arg(ioMaxBps).toUtf8(), &err);
+                   ioMaxBps > 0
+                       ? QStringLiteral("%1 rbps=%2 wbps=%2").arg(majmin).arg(ioMaxBps).toUtf8()
+                       : QStringLiteral("%1 rbps=max wbps=max").arg(majmin).toUtf8(),
+                   &err);
         }
     }
+}
+
+// Acha (ou cria) o leaf procforge do pid, devolvendo o path ABSOLUTO. Reaproveita
+// um leaf já existente (de throttle OU de bloqueio de rede) em vez de mover o
+// processo de novo — cgroup v2 só permite UM cgroup por processo por vez.
+QString ensureLeaf(uint pid)
+{
+    const QString marker = QStringLiteral("/run/procforge/%1").arg(pid);
+    {
+        QFile f(marker);
+        if (f.open(QIODevice::ReadOnly)) {
+            const QString leaf = QString::fromUtf8(f.readAll()).split(QLatin1Char('\n')).value(0).trimmed();
+            if (!leaf.isEmpty() && QFile::exists(leaf + QStringLiteral("/cgroup.procs")))
+                return leaf;
+        }
+    }
+    ::mkdir("/run/procforge", 0755);
+    const QString origin    = originCgroup(pid);
+    const QString originAbs = origin.isEmpty() ? QString() : (QStringLiteral("/sys/fs/cgroup") + origin);
+    const QString leaf      = QStringLiteral("/sys/fs/cgroup/procforge_%1").arg(pid);
+    if (::mkdir(leaf.toLocal8Bit().constData(), 0755) != 0 && errno != EEXIST)
+        return {};
+    QString err;
+    if (!echoTo(leaf + QStringLiteral("/cgroup.procs"), QByteArray::number(pid), &err)) {
+        ::rmdir(leaf.toLocal8Bit().constData());
+        return {};
+    }
+    echoTo(marker, (leaf + QLatin1Char('\n') + originAbs).toUtf8(), nullptr);
+    return leaf;
+}
+
+// Devolve o processo à origem (ou à raiz) e remove o leaf + marcador. Mesma
+// lógica que o CgroupRelease sempre teve; extraída pra ser reaproveitada quando
+// o bloqueio de rede solta o leaf também (e nenhum limite de recurso está ativo).
+void releaseLeaf(uint pid)
+{
+    QString leaf, originAbs;
+    {
+        QFile f(QStringLiteral("/run/procforge/%1").arg(pid));
+        if (f.open(QIODevice::ReadOnly)) {
+            const QStringList lines = QString::fromUtf8(f.readAll()).split(QLatin1Char('\n'));
+            if (lines.size() >= 1) leaf = lines.at(0).trimmed();
+            if (lines.size() >= 2) originAbs = lines.at(1).trimmed();
+        }
+    }
+    if (leaf.isEmpty())
+        leaf = QStringLiteral("/sys/fs/cgroup/procforge_%1").arg(pid);
+
+    if (!originAbs.isEmpty() && QFile::exists(originAbs + QStringLiteral("/cgroup.procs")))
+        echoTo(originAbs + QStringLiteral("/cgroup.procs"), QByteArray::number(pid), nullptr);
+    bool stillThere = false;
+    {
+        QFile lp(leaf + QStringLiteral("/cgroup.procs"));
+        if (lp.open(QIODevice::ReadOnly))
+            stillThere = !lp.readAll().trimmed().isEmpty();
+    }
+    if (stillThere)
+        echoTo(QStringLiteral("/sys/fs/cgroup/cgroup.procs"), QByteArray::number(pid), nullptr);
+
+    // rmdir pode perder uma corrida: um filho do processo que ainda não saiu
+    // do leaf no instante exato, ou memória do cgroup ainda sendo liberada
+    // pelo kernel (cgroup.events "populated" cai um pouco depois do exit),
+    // deixam o diretório momentaneamente não-vazio/ocupado — na prática isso
+    // levou bem mais que 20ms em teste ao vivo. Tenta por até ~2s antes de
+    // desistir e deixar o diretório vazio pra trás (assíncrono: não trava a GUI).
+    for (int i = 0; i < 50; ++i) {
+        if (::rmdir(leaf.toLocal8Bit().constData()) == 0 || errno == ENOENT)
+            break;
+        ::usleep(40000); // 40ms
+    }
+    ::unlink(QStringLiteral("/run/procforge/%1").arg(pid).toLocal8Bit().constData());
+}
+
+// Algum limite de recurso (cpu/mem/pids) ainda ativo nesse leaf? io.max fica de
+// fora (formato por dispositivo, raro ser o único limite ativo sozinho).
+bool leafHasActiveLimits(const QString &leaf)
+{
+    auto limited = [](const QString &path, bool firstTokenOnly) {
+        QFile f(path);
+        if (!f.open(QIODevice::ReadOnly)) return false;
+        QByteArray v = f.readAll().trimmed();
+        if (firstTokenOnly) v = v.split(' ').value(0);
+        return !v.isEmpty() && v != "max";
+    };
+    return limited(leaf + QStringLiteral("/cpu.max"), true)
+        || limited(leaf + QStringLiteral("/memory.max"), false)
+        || limited(leaf + QStringLiteral("/pids.max"), false);
+}
+
+// Path relativo à raiz do cgroupfs (o que `iptables -m cgroup --path` espera),
+// funciona tanto pro leaf achatado (procforge_<pid>) quanto pro aninhado
+// (dentro do scope de origem).
+QString relCgroupPath(const QString &absLeaf)
+{
+    QString rel = absLeaf;
+    if (rel.startsWith(QLatin1String("/sys/fs/cgroup")))
+        rel = rel.mid(14);
+    while (rel.startsWith(QLatin1Char('/')))
+        rel.remove(0, 1);
+    return rel;
 }
 
 // fork+exec de argv capturando stdout+stderr. childPre() roda no filho antes do
@@ -119,6 +226,22 @@ QString forkCapture(char *const argv[], const std::function<void()> &childPre, i
     int status = 0;
     ::waitpid(c, &status, 0);
     return QString::fromUtf8(out);
+}
+
+// Insere/remove uma regra DROP casando pelo cgroup v2 (iptables E ip6tables,
+// melhor esforço — falta de suporte a v6 não é erro). op: "-I" ou "-D".
+void fwRule(const char *op, const char *chain, const QString &relPath)
+{
+    for (const char *bin : {"iptables", "ip6tables"}) {
+        QList<QByteArray> a = { QByteArray(bin), QByteArray(op), QByteArray(chain),
+                                QByteArray("-m"), QByteArray("cgroup"),
+                                QByteArray("--path"), relPath.toUtf8(),
+                                QByteArray("-j"), QByteArray("DROP") };
+        QVector<char *> argv;
+        for (QByteArray &b : a) argv.append(b.data());
+        argv.append(nullptr);
+        forkCapture(argv.data(), nullptr);
+    }
 }
 } // namespace
 
@@ -200,10 +323,10 @@ void Helper::SendSignal(uint pid, qulonglong starttime, int sig)
     audit(QStringLiteral("SendSignal(%1)").arg(sig), pid, QStringLiteral("ok"));
 }
 
-void Helper::Renice(uint pid, int nice)
+void Helper::Renice(uint pid, qulonglong starttime, int nice)
 {
     if (!authorize(QStringLiteral("org.procforge.renice.raise"))) return;
-    if (!identityOk(pid, 0)) return;
+    if (!identityOk(pid, starttime)) return;
     errno = 0;
     if (::setpriority(PRIO_PROCESS, static_cast<id_t>(pid), nice) != 0 || errno != 0) {
         const int e = errno;
@@ -214,10 +337,10 @@ void Helper::Renice(uint pid, int nice)
     audit(QStringLiteral("Renice(%1)").arg(nice), pid, QStringLiteral("ok"));
 }
 
-void Helper::SetAffinity(uint pid, const QList<uint> &cpus)
+void Helper::SetAffinity(uint pid, qulonglong starttime, const QList<uint> &cpus)
 {
     if (!authorize(QStringLiteral("org.procforge.affinity.other"))) return;
-    if (!identityOk(pid, 0)) return;
+    if (!identityOk(pid, starttime)) return;
     if (cpus.isEmpty()) {
         sendErrorReply(QDBusError::InvalidArgs, QStringLiteral("Lista de CPUs vazia"));
         return;
@@ -235,10 +358,10 @@ void Helper::SetAffinity(uint pid, const QList<uint> &cpus)
     audit(QStringLiteral("SetAffinity"), pid, QStringLiteral("ok"));
 }
 
-QByteArray Helper::ReadMem(uint pid, qulonglong addr, uint len)
+QByteArray Helper::ReadMem(uint pid, qulonglong starttime, qulonglong addr, uint len)
 {
     if (!authorize(QStringLiteral("org.procforge.mem.read"))) return {};
-    if (!identityOk(pid, 0)) return {};
+    if (!identityOk(pid, starttime)) return {};
     if (len == 0 || len > 16u * 1024u * 1024u) {
         sendErrorReply(QDBusError::InvalidArgs, QStringLiteral("Tamanho inválido: %1").arg(len));
         return {};
@@ -263,10 +386,10 @@ QByteArray Helper::ReadMem(uint pid, qulonglong addr, uint len)
     return buf;
 }
 
-void Helper::WriteMem(uint pid, qulonglong addr, const QByteArray &bytes)
+void Helper::WriteMem(uint pid, qulonglong starttime, qulonglong addr, const QByteArray &bytes)
 {
     if (!authorize(QStringLiteral("org.procforge.mem.write"))) return;
-    if (!identityOk(pid, 0)) return;
+    if (!identityOk(pid, starttime)) return;
     if (bytes.isEmpty()) {
         sendErrorReply(QDBusError::InvalidArgs, QStringLiteral("Nada a escrever"));
         return;
@@ -452,6 +575,23 @@ void Helper::CgroupThrottle(uint pid, qulonglong starttime, int cpuPercent,
     if (!authorize(QStringLiteral("org.procforge.cgroup.move"))) return;
     if (!identityOk(pid, starttime)) return;
 
+    // Já existe um leaf procforge pro pid (ex.: bloqueio de rede já ativo)? Reaproveita
+    // em vez de tentar mover de novo — cgroup v2 só permite UM cgroup por processo.
+    {
+        QFile mf(QStringLiteral("/run/procforge/%1").arg(pid));
+        if (mf.open(QIODevice::ReadOnly)) {
+            const QString existingLeaf =
+                QString::fromUtf8(mf.readAll()).split(QLatin1Char('\n')).value(0).trimmed();
+            if (!existingLeaf.isEmpty() && QFile::exists(existingLeaf + QStringLiteral("/cgroup.procs"))) {
+                applyCgroupLimits(existingLeaf, cpuPercent, memMaxBytes, pidsMax, ioMaxBps);
+                audit(QStringLiteral("CgroupThrottle(leaf existente cpu=%1%% mem=%2 pids=%3 io=%4)")
+                          .arg(cpuPercent).arg(memMaxBytes).arg(pidsMax).arg(ioMaxBps),
+                      pid, QStringLiteral("ok"));
+                return;
+            }
+        }
+    }
+
     ::mkdir("/run/procforge", 0755);
     const QString origin    = originCgroup(pid);
     const QString originAbs = QStringLiteral("/sys/fs/cgroup") + origin;
@@ -510,43 +650,73 @@ void Helper::CgroupRelease(uint pid, qulonglong starttime)
     if (!authorize(QStringLiteral("org.procforge.cgroup.move"))) return;
     Q_UNUSED(starttime); // pode já ter mudado; apenas limpamos
 
-    // Marcador: linha 1 = leaf (onde o processo está), linha 2 = origem (destino).
-    QString leaf, originAbs;
+    QString leaf;
     {
         QFile f(QStringLiteral("/run/procforge/%1").arg(pid));
-        if (f.open(QIODevice::ReadOnly)) {
-            const QStringList lines = QString::fromUtf8(f.readAll()).split(QLatin1Char('\n'));
-            if (lines.size() >= 1) leaf = lines.at(0).trimmed();
-            if (lines.size() >= 2) originAbs = lines.at(1).trimmed();
-        }
+        if (f.open(QIODevice::ReadOnly))
+            leaf = QString::fromUtf8(f.readAll()).split(QLatin1Char('\n')).value(0).trimmed();
     }
     if (leaf.isEmpty())
         leaf = QStringLiteral("/sys/fs/cgroup/procforge_%1").arg(pid); // compat
 
-    QString err;
-    // 1) devolve ao cgroup de origem (no caso nested, o scope ainda existe -> restauração exata).
-    if (!originAbs.isEmpty() && QFile::exists(originAbs + QStringLiteral("/cgroup.procs")))
-        echoTo(originAbs + QStringLiteral("/cgroup.procs"), QByteArray::number(pid), &err);
-    // 2) se ainda estiver no leaf, cai na raiz (sempre aceita).
-    bool stillThere = false;
-    {
-        QFile lp(leaf + QStringLiteral("/cgroup.procs"));
-        if (lp.open(QIODevice::ReadOnly))
-            stillThere = !lp.readAll().trimmed().isEmpty();
-    }
-    if (stillThere)
-        echoTo(QStringLiteral("/sys/fs/cgroup/cgroup.procs"), QByteArray::number(pid), &err);
-
-    const int rr = ::rmdir(leaf.toLocal8Bit().constData());
-    ::unlink(QStringLiteral("/run/procforge/%1").arg(pid).toLocal8Bit().constData());
-
-    if (rr != 0 && errno != ENOENT) {
-        sendErrorReply(QDBusError::Failed,
-                       QStringLiteral("Não consegui remover o cgroup (processo ainda dentro?): %1")
-                           .arg(QString::fromUtf8(::strerror(errno))));
+    // Bloqueio de rede ainda ativo nesse leaf? A regra de firewall depende do
+    // cgroup existir — só limpa os limites de recurso e mantém o processo lá.
+    if (QFile::exists(QStringLiteral("/run/procforge/%1.netblock").arg(pid))) {
+        applyCgroupLimits(leaf, 0, 0, 0, 0);
+        audit(QStringLiteral("CgroupRelease(mantido p/ bloqueio de rede)"), pid, QStringLiteral("ok"));
         return;
     }
+
+    releaseLeaf(pid);
     audit(QStringLiteral("CgroupRelease"), pid, QStringLiteral("ok"));
+}
+
+void Helper::NetBlock(uint pid, qulonglong starttime, bool block)
+{
+    if (!authorize(QStringLiteral("org.procforge.net.block"))) return;
+    if (!identityOk(pid, starttime)) return;
+
+    if (block) {
+        if (QStandardPaths::findExecutable(QStringLiteral("iptables")).isEmpty()) {
+            audit(QStringLiteral("NetBlock"), pid, QStringLiteral("fail(sem iptables)"));
+            sendErrorReply(QDBusError::Failed,
+                           QStringLiteral("iptables não encontrado (instale o pacote iptables)."));
+            return;
+        }
+        const QString leaf = ensureLeaf(pid);
+        if (leaf.isEmpty()) {
+            audit(QStringLiteral("NetBlock"), pid, QStringLiteral("fail(leaf)"));
+            sendErrorReply(QDBusError::Failed, QStringLiteral("Não consegui isolar o processo num cgroup."));
+            return;
+        }
+        const QString rel = relCgroupPath(leaf);
+        for (const char *chain : {"OUTPUT", "INPUT"}) {
+            fwRule("-D", chain, rel);   // idempotente: some com duplicata antiga, se houver
+            fwRule("-I", chain, rel);
+        }
+        echoTo(QStringLiteral("/run/procforge/%1.netblock").arg(pid), QByteArray("1"), nullptr);
+        audit(QStringLiteral("NetBlock(on)"), pid, QStringLiteral("ok"));
+        return;
+    }
+
+    QString leaf;
+    {
+        QFile f(QStringLiteral("/run/procforge/%1").arg(pid));
+        if (f.open(QIODevice::ReadOnly))
+            leaf = QString::fromUtf8(f.readAll()).split(QLatin1Char('\n')).value(0).trimmed();
+    }
+    if (leaf.isEmpty())
+        leaf = QStringLiteral("/sys/fs/cgroup/procforge_%1").arg(pid); // compat: sem marcador, tenta o leaf padrão
+    {
+        const QString rel = relCgroupPath(leaf);
+        for (const char *chain : {"OUTPUT", "INPUT"})
+            fwRule("-D", chain, rel);
+    }
+    ::unlink(QStringLiteral("/run/procforge/%1.netblock").arg(pid).toLocal8Bit().constData());
+
+    if (!leaf.isEmpty() && !leafHasActiveLimits(leaf))
+        releaseLeaf(pid);
+    audit(QStringLiteral("NetBlock(off)"), pid, QStringLiteral("ok"));
 }
 
 void Helper::SetScheduler(uint pid, qulonglong starttime, int policy, int rtPriority)

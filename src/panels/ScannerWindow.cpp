@@ -249,7 +249,7 @@ QByteArray ScannerWindow::readBytes(quint64 addr, int len)
         return b;
     if (errno == EPERM || errno == EACCES) {
         bool ok = false;
-        QByteArray r = helper::readMem(m_pid, addr, len, &ok);
+        QByteArray r = helper::readMem(m_pid, m_starttime, addr, len, &ok);
         if (ok) return r;
     }
     return {};
@@ -261,7 +261,7 @@ bool ScannerWindow::writeBytes(quint64 addr, const QByteArray &raw)
     if (n == raw.size())
         return true;
     if (errno == EPERM || errno == EACCES)
-        return helper::writeMem(m_pid, addr, raw).ok;
+        return helper::writeMem(m_pid, m_starttime, addr, raw).ok;
     return false;
 }
 

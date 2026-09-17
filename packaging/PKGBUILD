@@ -1,0 +1,29 @@
+# Maintainer: Gabriel (kxinha) <gabriel17166@gmail.com>
+pkgname=procforge
+pkgver=0.3.0
+pkgrel=1
+pkgdesc="Clone do Process Hacker para Linux — manipulação ativa de processos, memória e sistema"
+arch=('x86_64')
+url="https://github.com/gabrielmf1998/ProcForge"
+license=('GPL3')
+depends=('qt6-base' 'kcoreaddons' 'ki18n' 'kwidgetsaddons' 'polkit' 'hicolor-icon-theme')
+optdepends=('bpftrace: rastreamento eBPF por processo'
+            'iproute2: aba de Rede (ss -K)'
+            'util-linux: nsenter (aba Namespaces)'
+            'libcap: capsh (aba Token)'
+            'kwin: controle de janelas via KWin scripting'
+            'iptables: cortar/restabelecer rede de um processo')
+makedepends=('cmake' 'ninja' 'extra-cmake-modules' 'gettext')
+source=("$pkgname-$pkgver.tar.gz")
+sha256sums=('1850e2b68b9acb63808c088190bff2f349074a971aa252251a3580d46f86228e')
+
+build() {
+  cmake -S "$pkgname-$pkgver" -B build -G Ninja \
+    -DCMAKE_BUILD_TYPE=None \
+    -DCMAKE_INSTALL_PREFIX=/usr
+  cmake --build build
+}
+
+package() {
+  DESTDIR="$pkgdir" cmake --install build
+}

@@ -65,28 +65,13 @@ actions::Result sendSignal(int pid, quint64 starttime, int sig)
                       { uint(pid), qulonglong(starttime), int(sig) });
 }
 
-actions::Result renice(int pid, int nice)
-{
-    return callHelper(QStringLiteral("Renice"), { uint(pid), int(nice) });
-}
-
-actions::Result setAffinity(int pid, const QList<int> &cpus)
-{
-    QList<uint> u;
-    u.reserve(cpus.size());
-    for (int c : cpus)
-        u.append(uint(c));
-    return callHelper(QStringLiteral("SetAffinity"),
-                      { uint(pid), QVariant::fromValue(u) });
-}
-
-QByteArray readMem(int pid, quint64 addr, int len, bool *ok)
+QByteArray readMem(int pid, quint64 starttime, quint64 addr, int len, bool *ok)
 {
     if (ok) *ok = false;
     QDBusMessage msg = QDBusMessage::createMethodCall(
         QLatin1String(kService), QLatin1String(kPath), QLatin1String(kIface),
         QStringLiteral("ReadMem"));
-    msg.setArguments({ uint(pid), qulonglong(addr), uint(len) });
+    msg.setArguments({ uint(pid), qulonglong(starttime), qulonglong(addr), uint(len) });
     const QDBusMessage reply = QDBusConnection::systemBus().call(msg, QDBus::Block, kTimeout);
     if (reply.type() == QDBusMessage::ErrorMessage || reply.arguments().isEmpty())
         return {};
@@ -94,10 +79,10 @@ QByteArray readMem(int pid, quint64 addr, int len, bool *ok)
     return reply.arguments().at(0).toByteArray();
 }
 
-actions::Result writeMem(int pid, quint64 addr, const QByteArray &bytes)
+actions::Result writeMem(int pid, quint64 starttime, quint64 addr, const QByteArray &bytes)
 {
     return callHelper(QStringLiteral("WriteMem"),
-                      { uint(pid), qulonglong(addr), bytes });
+                      { uint(pid), qulonglong(starttime), qulonglong(addr), bytes });
 }
 
 actions::Result injectLibrary(int pid, quint64 starttime, const QString &path)
@@ -278,6 +263,9 @@ void cgroupThrottleAsync(int pid, quint64 st, int cpuPercent, quint64 memMaxByte
 
 void cgroupReleaseAsync(int pid, quint64 st, QObject *ctx, ResultCb cb)
 { callAsync(QStringLiteral("CgroupRelease"), { uint(pid), qulonglong(st) }, ctx, std::move(cb)); }
+
+void netBlockAsync(int pid, quint64 st, bool block, QObject *ctx, ResultCb cb)
+{ callAsync(QStringLiteral("NetBlock"), { uint(pid), qulonglong(st), block }, ctx, std::move(cb)); }
 
 static void callAsyncStr(const QString &method, const QVariantList &args, QObject *ctx, StrCb cb, int timeout)
 {

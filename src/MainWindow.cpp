@@ -8,6 +8,7 @@
 #include "core/KWinControl.h"
 #include "core/ThemeManager.h"
 #include "core/Procfs.h"
+#include "core/TrayIcon.h"
 #include "panels/DetailPanel.h"
 #include "panels/ScannerWindow.h"
 #include "panels/SystemTabs.h"
@@ -40,6 +41,7 @@
 
 #include <csignal>
 #include <QApplication>
+#include <QCloseEvent>
 #include <QIcon>
 #include <QKeySequence>
 #include <QMap>
@@ -152,8 +154,9 @@ MainWindow::MainWindow(QWidget *parent)
     connect(m_collector, &ProcessCollector::snapshotReady,
             this, &MainWindow::onSnapshot);
     m_collectorThread->start();
-    const int intervalMs = QSettings().value(QStringLiteral("intervalMs"), 1000).toInt();
-    QMetaObject::invokeMethod(m_collector, "start", Qt::QueuedConnection, Q_ARG(int, intervalMs));
+    m_currentIntervalMs = QSettings().value(QStringLiteral("intervalMs"), 1000).toInt();
+    m_lastScanTimer.start();
+    QMetaObject::invokeMethod(m_collector, "start", Qt::QueuedConnection, Q_ARG(int, m_currentIntervalMs));
 
     // ---- eventos de processo em push (cn_proc): atualização quase instantânea ----
     m_eventDebounce = new QTimer(this);
@@ -164,6 +167,24 @@ MainWindow::MainWindow(QWidget *parent)
     });
     if (QSettings().value(QStringLiteral("realtimeEvents"), true).toBool() && helper::available())
         m_subscribed = helper::subscribeProcEvents(this, SLOT(onProcEvent(uint,uint,uint)));
+
+    // ---- ícone na bandeja: reabrir, checar atualização, iniciar com o sistema ----
+    m_tray = new TrayIcon(this);
+    connect(m_tray, &TrayIcon::quitRequested, qApp, &QApplication::quit);
+}
+
+void MainWindow::closeEvent(QCloseEvent *event)
+{
+    // Com tray disponível, fechar a janela (botão X) só minimiza para a
+    // bandeja. Sair de verdade é o menu Hacker › Sair ou o Sair do tray,
+    // ambos indo direto em QApplication::quit() (não passam por close()).
+    if (m_tray && m_tray->isSupported()) {
+        event->ignore();
+        hide();
+        return;
+    }
+    event->accept();
+    QApplication::quit();
 }
 
 // Ícone de tema com fallback, para a toolbar/menus.
@@ -189,7 +210,7 @@ void MainWindow::buildMenusAndToolbar()
     mHacker->addSeparator();
     auto *actQuit = mHacker->addAction(ic("application-exit"), i18n("Sair"));
     actQuit->setShortcut(QKeySequence::Quit);
-    connect(actQuit, &QAction::triggered, this, &QWidget::close);
+    connect(actQuit, &QAction::triggered, qApp, &QApplication::quit);
 
     // -- Ver (View) --
     auto *mView = menuBar()->addMenu(i18n("&Ver"));
@@ -200,14 +221,16 @@ void MainWindow::buildMenusAndToolbar()
     });
     auto *intervalMenu = mView->addMenu(i18n("Intervalo de atualização"));
     auto *intervalGroup = new QActionGroup(this);
+    const int savedIntervalMs = QSettings().value(QStringLiteral("intervalMs"), 1000).toInt();
     struct { QString label; int ms; } opts[] = {
         {i18n("0,5 s"), 500}, {i18n("1 s"), 1000}, {i18n("2 s"), 2000}, {i18n("5 s"), 5000},
+        {i18n("Parar (manual)"), 0},
     };
     for (auto &o : opts) {
         auto *a = intervalMenu->addAction(o.label);
         a->setCheckable(true);
         a->setActionGroup(intervalGroup);
-        if (o.ms == 1000) a->setChecked(true);
+        if (o.ms == savedIntervalMs) a->setChecked(true);
         const int ms = o.ms;
         connect(a, &QAction::triggered, this, [this, ms]() { setInterval(ms); });
     }
@@ -344,8 +367,18 @@ MainWindow::~MainWindow()
 void MainWindow::onProcEvent(uint what, uint pid, uint ppid)
 {
     Q_UNUSED(what); Q_UNUSED(pid); Q_UNUSED(ppid);
-    // Coalesce rajadas de fork/exec/exit num único rescan rápido (~instantâneo).
-    m_eventDebounce->start();
+    // "Parar" (manual): eventos de processo não disparam rescan automático.
+    if (m_currentIntervalMs <= 0)
+        return;
+    // Já agendado: uma rajada de fork/exec/exit vira UM rescan (throttle real,
+    // não um debounce que reagenda pra sempre enquanto o sistema estiver ocupado).
+    if (m_eventDebounce->isActive())
+        return;
+    // Respeita o intervalo configurado como piso: só some mais rápido que isso
+    // se já fazia tempo desde o último scan (sistema ocioso -> resposta ~instantânea).
+    const qint64 elapsed = m_lastScanTimer.isValid() ? m_lastScanTimer.elapsed() : m_currentIntervalMs;
+    const int wait = qBound(60, static_cast<int>(m_currentIntervalMs - elapsed), m_currentIntervalMs);
+    m_eventDebounce->start(wait);
 }
 
 void MainWindow::goToProcess(int pid)
@@ -365,6 +398,7 @@ void MainWindow::goToProcess(int pid)
 
 void MainWindow::onSnapshot(const QList<ProcInfo> &procs)
 {
+    m_lastScanTimer.restart();
     double cpu = 0.0;
     m_userCounts.clear();
     for (const ProcInfo &p : procs) {
@@ -611,7 +645,8 @@ void MainWindow::openOptions()
 
     auto *interval = new QComboBox(&dlg);
     struct { QString l; int ms; } iv[] = {
-        {i18n("0,5 s"), 500}, {i18n("1 s"), 1000}, {i18n("2 s"), 2000}, {i18n("5 s"), 5000}};
+        {i18n("0,5 s"), 500}, {i18n("1 s"), 1000}, {i18n("2 s"), 2000}, {i18n("5 s"), 5000},
+        {i18n("Parar (manual)"), 0}};
     for (auto &o : iv) interval->addItem(o.l, o.ms);
     if (int i = interval->findData(s.value(QStringLiteral("intervalMs"), 1000).toInt()); i >= 0)
         interval->setCurrentIndex(i);
@@ -689,6 +724,7 @@ void MainWindow::onCurrentChanged(const QModelIndex &current, const QModelIndex 
 
 void MainWindow::setInterval(int ms)
 {
+    m_currentIntervalMs = ms;
     QMetaObject::invokeMethod(m_collector, "setInterval", Qt::QueuedConnection, Q_ARG(int, ms));
 }
 
@@ -792,6 +828,11 @@ void MainWindow::showContextMenu(const QPoint &pos)
             this, [this]() { cgroupLimitCurrent(); });
     connect(menu.addAction(i18n("Remover limites (cgroup)")), &QAction::triggered,
             this, [this]() { cgroupReleaseCurrent(); });
+    {
+        const bool blocked = QFile::exists(QStringLiteral("/run/procforge/%1.netblock").arg(pi.pid));
+        connect(menu.addAction(blocked ? i18n("Restabelecer rede") : i18n("Cortar rede (sem internet)")),
+                &QAction::triggered, this, [this, blocked]() { netBlockCurrent(!blocked); });
+    }
 
     menu.addSeparator();
     connect(menu.addAction(i18n("Copiar PID")), &QAction::triggered,
@@ -1021,6 +1062,19 @@ void MainWindow::cgroupReleaseCurrent()
     helper::cgroupReleaseAsync(pi.pid, pi.starttime, this, [this, name, pid](actions::Result r) {
         if (!r.ok) KMessageBox::error(this, r.error);
         else statusBar()->showMessage(i18n("Limites removidos de %1 (PID %2).", name, pid), 4000);
+    });
+}
+
+void MainWindow::netBlockCurrent(bool block)
+{
+    ProcInfo pi;
+    if (!currentInfo(pi))
+        return;
+    const QString name = pi.name;
+    helper::netBlockAsync(pi.pid, pi.starttime, block, this, [this, name, block](actions::Result r) {
+        if (!r.ok) { KMessageBox::error(this, r.error); return; }
+        statusBar()->showMessage(block ? i18n("Rede cortada para %1.", name)
+                                       : i18n("Rede restabelecida para %1.", name), 4000);
     });
 }
 

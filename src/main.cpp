@@ -9,6 +9,7 @@
 #include <QSettings>
 #include <QTimer>
 #include <KLocalizedString>
+#include <cstring>
 #include <unistd.h>
 
 int main(int argc, char **argv)
@@ -16,12 +17,20 @@ int main(int argc, char **argv)
     QApplication app(argc, argv);
     QApplication::setApplicationName(QStringLiteral("procforge"));
     QApplication::setApplicationDisplayName(QStringLiteral("ProcForge"));
-    QApplication::setApplicationVersion(QStringLiteral("0.1"));
+    QApplication::setApplicationVersion(QStringLiteral("0.3"));
     QApplication::setDesktopFileName(QStringLiteral("org.procforge.ProcForge"));
 
     QApplication::setOrganizationName(QStringLiteral("ProcForge"));
     QApplication::setWindowIcon(QIcon(QStringLiteral(":/procforge.png")));
     KLocalizedString::setApplicationDomain(QByteArrayLiteral("procforge"));
+
+    // --tray: usado pela entrada de autostart (Iniciar com o sistema) para
+    // abrir só na bandeja. Sem isso, a 1ª janela fechada mataria o app
+    // inteiro mesmo com o ícone na bandeja vivo — por isso o flag abaixo.
+    bool startHidden = false;
+    for (int i = 1; i < argc; ++i)
+        if (std::strcmp(argv[i], "--tray") == 0) startHidden = true;
+    QApplication::setQuitOnLastWindowClosed(false);
 
     // Idioma escolhido pelo usuário (antes de construir a UI).
     {
@@ -45,7 +54,8 @@ int main(int argc, char **argv)
     qRegisterMetaType<QList<ProcInfo>>("QList<ProcInfo>");
 
     MainWindow w;
-    w.show();
+    if (!startHidden)
+        w.show();
 
     // Gancho de teste: PROCFORGE_TEST_PROPS=<pid|self> abre a janela de Propriedades.
     const QByteArray tp = qgetenv("PROCFORGE_TEST_PROPS");

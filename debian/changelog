@@ -1,0 +1,24 @@
+procforge (0.3.0-1) unstable; urgency=medium
+
+  * Cortar/restabelecer toda a rede de um processo (menu de contexto): DROP
+    via iptables+ip6tables casando pelo cgroup v2. Reaproveita o mesmo leaf
+    do "Limitar recursos" quando os dois estão ativos no mesmo processo.
+  * Corrigido: intervalo de atualização sem opção de parar, e eventos de
+    processo em tempo real disparando rescans mais rápido que o intervalo
+    configurado (travava a seleção em sistemas ocupados).
+
+ -- Gabriel (kxinha) <gabriel17166@gmail.com>  Thu, 17 Sep 2026 18:16:05 -0300
+
+procforge (0.2.0-1) unstable; urgency=medium
+
+  * Ícone na bandeja do sistema (QSystemTrayIcon): reabrir a janela, checar
+    atualizações (GitHub + GitLab releases) e alternar "iniciar com o
+    sistema" (entrada XDG autostart). Fechar a janela agora minimiza para a
+    bandeja; "Sair" encerra de verdade.
+  * Corrigido: Renice/SetAffinity/ReadMem/WriteMem no helper não validavam
+    (pid, starttime) contra reuso de PID como o resto das ações
+    privilegiadas; Renice/SetAffinity via helper tinham descasamento de
+    assinatura D-Bus com o cliente assíncrono e sempre falhavam.
+  * Empacotamento inicial para Debian/Ubuntu (.deb).
+
+ -- Gabriel (kxinha) <gabriel17166@gmail.com>  Thu, 17 Sep 2026 17:05:17 -0300

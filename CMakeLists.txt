@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.20)
-project(procforge VERSION 0.1 LANGUAGES CXX)
+project(procforge VERSION 0.3 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -12,7 +12,7 @@ if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE RelWithDebInfo)
 endif()
 
-find_package(Qt6 6.6 REQUIRED COMPONENTS Widgets DBus)
+find_package(Qt6 6.6 REQUIRED COMPONENTS Widgets DBus Network)
 # KF6 no Fedora vem dividido (sem umbrella KF6Config.cmake): procura por componente.
 find_package(KF6CoreAddons REQUIRED)
 find_package(KF6I18n REQUIRED)
@@ -32,6 +32,9 @@ add_executable(procforge
     src/core/ThreadController.cpp
     src/core/KWinControl.cpp
     src/core/ThemeManager.cpp
+    src/core/TrayIcon.cpp
+    src/core/UpdateChecker.cpp
+    src/core/Autostart.cpp
     src/model/ProcessCollector.cpp
     src/model/ProcessModel.cpp
     src/model/ProcessFilterProxy.cpp
@@ -51,6 +54,7 @@ target_include_directories(procforge PRIVATE ${CMAKE_SOURCE_DIR}/src)
 target_link_libraries(procforge PRIVATE
     Qt6::Widgets
     Qt6::DBus
+    Qt6::Network
     KF6::CoreAddons
     KF6::I18n
     KF6::WidgetsAddons
