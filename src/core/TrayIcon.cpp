@@ -1,16 +1,14 @@
 #include "TrayIcon.h"
 #include "Autostart.h"
-#include "UpdateChecker.h"
 
+#include <KFormat>
 #include <KLocalizedString>
 
 #include <QAction>
-#include <QDesktopServices>
 #include <QIcon>
 #include <QMainWindow>
 #include <QMenu>
 #include <QSystemTrayIcon>
-#include <QUrl>
 
 TrayIcon::TrayIcon(QMainWindow *window)
     : QObject(window), m_window(window)
@@ -18,33 +16,13 @@ TrayIcon::TrayIcon(QMainWindow *window)
     if (!QSystemTrayIcon::isSystemTrayAvailable())
         return;
 
-    m_updater = new UpdateChecker(this);
-    connect(m_updater, &UpdateChecker::updateAvailable, this,
-            [this](const QString &version, const QString &url) {
-        m_pendingUrl = url;
-        m_tray->showMessage(i18n("Atualização disponível"),
-                            i18n("ProcForge %1 disponível — clique para abrir.", version),
-                            QSystemTrayIcon::Information, 10000);
-    });
-    connect(m_updater, &UpdateChecker::upToDate, this, [this]() {
-        if (m_manualCheck)
-            m_tray->showMessage(QStringLiteral("ProcForge"),
-                                i18n("Você já está na versão mais recente."),
-                                QSystemTrayIcon::Information, 5000);
-    });
-    connect(m_updater, &UpdateChecker::checkFailed, this, [this](const QString &err) {
-        if (m_manualCheck)
-            m_tray->showMessage(QStringLiteral("ProcForge"),
-                                i18n("Falha ao verificar atualizações: %1", err),
-                                QSystemTrayIcon::Warning, 5000);
-    });
-
     m_tray = new QSystemTrayIcon(
         QIcon::fromTheme(QStringLiteral("procforge"), QIcon(QStringLiteral(":/procforge.png"))),
         this);
     m_tray->setToolTip(QStringLiteral("ProcForge"));
 
     auto *menu = new QMenu();
+    connect(this, &QObject::destroyed, menu, &QObject::deleteLater);
     connect(menu->addAction(i18n("Abrir ProcForge")), &QAction::triggered, this, [this]() {
         m_window->show();
         m_window->raise();
@@ -52,13 +30,17 @@ TrayIcon::TrayIcon(QMainWindow *window)
     });
     menu->addSeparator();
     connect(menu->addAction(i18n("Verificar atualizações")), &QAction::triggered,
-            this, [this]() { checkForUpdates(true); });
+            this, &TrayIcon::checkUpdatesRequested);
 
     m_autostartAction = menu->addAction(i18n("Iniciar com o sistema"));
     m_autostartAction->setCheckable(true);
     m_autostartAction->setChecked(autostart::isEnabled());
     connect(m_autostartAction, &QAction::toggled, this, [](bool on) {
         autostart::setEnabled(on);
+    });
+    connect(menu, &QMenu::aboutToShow, this, [this]() {
+        const QSignalBlocker block(m_autostartAction);   // pode ter mudado nas Opções
+        m_autostartAction->setChecked(autostart::isEnabled());
     });
 
     menu->addSeparator();
@@ -69,27 +51,31 @@ TrayIcon::TrayIcon(QMainWindow *window)
     connect(m_tray, &QSystemTrayIcon::activated, this, [this](QSystemTrayIcon::ActivationReason r) {
         if (r != QSystemTrayIcon::Trigger)
             return;
-        if (m_window->isVisible()) {
+        if (m_window->isVisible() && !m_window->isMinimized()) {
             m_window->hide();
         } else {
-            m_window->show();
+            m_window->showNormal();
             m_window->raise();
             m_window->activateWindow();
         }
     });
-    connect(m_tray, &QSystemTrayIcon::messageClicked, this, [this]() {
-        if (!m_pendingUrl.isEmpty())
-            QDesktopServices::openUrl(QUrl(m_pendingUrl));
-    });
+    connect(m_tray, &QSystemTrayIcon::messageClicked, this, &TrayIcon::notificationClicked);
 
     m_tray->show();
-
-    // Checagem silenciosa ao iniciar: só incomoda se houver atualização de fato.
-    checkForUpdates(false);
 }
 
-void TrayIcon::checkForUpdates(bool manual)
+void TrayIcon::notify(const QString &title, const QString &text)
 {
-    m_manualCheck = manual;
-    m_updater->checkAsync();
+    if (m_tray)
+        m_tray->showMessage(title, text, QSystemTrayIcon::Information, 10000);
+}
+
+void TrayIcon::setStatus(double cpuPercent, quint64 memUsed, quint64 memTotal)
+{
+    if (!m_tray)
+        return;
+    static const KFormat fmt;
+    m_tray->setToolTip(i18n("ProcForge\nCPU: %1%\nMemória: %2 de %3",
+                            QString::number(cpuPercent, 'f', 1),
+                            fmt.formatByteSize(memUsed, 1), fmt.formatByteSize(memTotal, 1)));
 }

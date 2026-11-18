@@ -59,6 +59,23 @@ bool available()
     return act.isValid() && act.value().contains(QLatin1String(kService));
 }
 
+bool running()
+{
+    auto *iface = QDBusConnection::systemBus().interface();
+    return iface && iface->isServiceRegistered(QLatin1String(kService));
+}
+
+QString version()
+{
+    QDBusMessage msg = QDBusMessage::createMethodCall(
+        QLatin1String(kService), QLatin1String(kPath), QLatin1String(kIface),
+        QStringLiteral("Ping"));
+    const QDBusMessage reply = QDBusConnection::systemBus().call(msg, QDBus::Block, 3000);
+    if (reply.type() == QDBusMessage::ErrorMessage || reply.arguments().isEmpty())
+        return {};
+    return reply.arguments().at(0).toString();
+}
+
 actions::Result sendSignal(int pid, quint64 starttime, int sig)
 {
     return callHelper(QStringLiteral("SendSignal"),

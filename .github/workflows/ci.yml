@@ -1,0 +1,39 @@
+name: CI
+
+on:
+  push:
+    branches: ['**']
+    tags-ignore: ['v*']
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build-test:
+    name: ${{ matrix.distro }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - distro: arch
+            image: archlinux:latest
+          - distro: fedora
+            image: fedora:latest
+          - distro: debian
+            image: debian:trixie
+    container:
+      image: ${{ matrix.image }}
+      # ptrace/pidfd_getfd/process_vm_* nos testes de injeção e memória
+      options: --cap-add SYS_PTRACE --security-opt seccomp=unconfined
+    steps:
+      - name: Dependências
+        run: |
+          if command -v pacman >/dev/null; then pacman -Sy --noconfirm --needed git; fi
+          if command -v dnf >/dev/null; then dnf install -y git; fi
+          if command -v apt-get >/dev/null; then apt-get update && apt-get install -y git ca-certificates; fi
+      - uses: actions/checkout@v4
+      - run: bash scripts/ci/deps.sh ${{ matrix.distro }}
+      - name: Compilar e testar
+        run: bash scripts/ci/build-test.sh
+      - name: Shell scripts (sintaxe)
+        run: for f in install.sh install-helper.sh scripts/procforge-update scripts/install-local.sh scripts/ci/*.sh tests/*.sh; do bash -n "$f"; done

@@ -24,7 +24,10 @@
 #include <QFontDatabase>
 #include <QCheckBox>
 
+#include <QThread>
+
 #include <cerrno>
+#include <memory>
 #include <sys/mman.h>
 
 namespace {
@@ -34,6 +37,18 @@ quint64 parseAddr(const QString &t, bool *ok)
     if (s.startsWith(QLatin1String("0x"), Qt::CaseInsensitive))
         s = s.mid(2);
     return s.toULongLong(ok, 16);
+}
+
+QString formatAs(ScanType t, const QByteArray &raw)
+{
+    MemoryScanner tmp(0);
+    tmp.setType(t);
+    return tmp.formatValue(raw);
+}
+
+bool modeNeedsValue(RefineMode m)
+{
+    return m == RefineMode::Exact || m == RefineMode::GreaterThan || m == RefineMode::LessThan;
 }
 } // namespace
 
@@ -93,6 +108,13 @@ ScannerWindow::ScannerWindow(int pid, quint64 starttime, const QString &name, QW
         m_count = new QLabel(i18n("0 resultados"), page);
         btns->addWidget(m_count);
         v->addLayout(btns);
+        m_scanControls = {m_type, m_value, bFirst, m_refineMode, bRefine, bNew};
+        // Nomes estáveis para o teste de GUI.
+        m_value->setObjectName(QStringLiteral("scanValue"));
+        bFirst->setObjectName(QStringLiteral("scanFirst"));
+        bRefine->setObjectName(QStringLiteral("scanRefine"));
+        m_refineMode->setObjectName(QStringLiteral("scanRefineMode"));
+        m_count->setObjectName(QStringLiteral("scanCount"));
 
         auto *split = new QSplitter(Qt::Horizontal, page);
 
@@ -100,6 +122,7 @@ ScannerWindow::ScannerWindow(int pid, quint64 starttime, const QString &name, QW
         auto *lv = new QVBoxLayout(left);
         lv->setContentsMargins(0, 0, 0, 0);
         m_results = new QTableWidget(0, 2, left);
+        m_results->setObjectName(QStringLiteral("scanResults"));
         m_results->setHorizontalHeaderLabels({i18n("Endereço"), i18n("Valor")});
         m_results->verticalHeader()->setVisible(false);
         m_results->setSelectionBehavior(QAbstractItemView::SelectRows);
@@ -236,6 +259,7 @@ ScanType ScannerWindow::currentType() const
 
 void ScannerWindow::onTypeChanged()
 {
+    if (m_busy) return;
     m_scanner.setType(currentType());
     m_scanner.reset();
     reloadResults();
@@ -265,39 +289,87 @@ bool ScannerWindow::writeBytes(quint64 addr, const QByteArray &raw)
     return false;
 }
 
+void ScannerWindow::setScanBusy(bool busy)
+{
+    m_busy = busy;
+    for (QWidget *w : std::as_const(m_scanControls))
+        w->setEnabled(!busy);
+    if (busy) {
+        m_count->setText(i18n("Buscando..."));
+        setCursor(Qt::BusyCursor);
+    } else {
+        unsetCursor();
+    }
+}
+
+void ScannerWindow::runScanJob(bool first, RefineMode mode, const QString &value)
+{
+    struct Job { MemoryScanner sc; long n = 0; int err = 0; };
+    auto job = std::make_shared<Job>(Job{m_scanner});
+    job->sc.setType(currentType());
+    setScanBusy(true);
+    // A thread não toca na janela: trabalha numa cópia e devolve o resultado.
+    QThread *t = QThread::create([job, first, mode, value]() {
+        job->n = first ? job->sc.firstScanExact(value, &job->err)
+                       : job->sc.refine(mode, value, &job->err);
+    });
+    connect(t, &QThread::finished, t, &QObject::deleteLater);
+    connect(t, &QThread::finished, this, [this, job, first]() {
+        setScanBusy(false);
+        if (first && job->n == 0 && (job->err == EPERM || job->err == EACCES)) {
+            reloadResults();
+            KMessageBox::error(this,
+                i18n("Sem permissão para ler a memória deste processo (uid diferente). "
+                     "A busca direta funciona para processos do seu usuário; varredura "
+                     "cross-uid pelo helper é um passo futuro."));
+            return;
+        }
+        m_scanner = job->sc;
+        reloadResults();
+    });
+    t->start(QThread::LowPriority);
+}
+
 void ScannerWindow::firstScan()
 {
-    m_scanner.setType(currentType());
+    if (m_busy) return;
     if (m_value->text().trimmed().isEmpty()) {
         KMessageBox::information(this, i18n("Digite um valor para buscar."));
         return;
     }
-    int err = 0;
-    const long n = m_scanner.firstScanExact(m_value->text(), &err);
-    if (n == 0 && (err == EPERM || err == EACCES)) {
-        KMessageBox::error(this,
-            i18n("Sem permissão para ler a memória deste processo (uid diferente). "
-                 "A busca direta funciona para processos do seu usuário; varredura "
-                 "cross-uid pelo helper é um passo futuro."));
+    QByteArray probe;
+    MemoryScanner check(0);
+    check.setType(currentType());
+    if (!check.parseValue(m_value->text(), probe)) {
+        KMessageBox::error(this, i18n("Valor inválido para o tipo %1.", scanTypeName(currentType())));
         return;
     }
-    reloadResults();
+    m_scanner.reset();
+    runScanJob(true, RefineMode::Exact, m_value->text());
 }
 
 void ScannerWindow::refineScan()
 {
+    if (m_busy) return;
     if (m_scanner.count() == 0) {
         KMessageBox::information(this, i18n("Faça a primeira busca antes de refinar."));
         return;
     }
     const auto mode = static_cast<RefineMode>(m_refineMode->currentData().toInt());
-    int err = 0;
-    m_scanner.refine(mode, m_value->text(), &err);
-    reloadResults();
+    if (modeNeedsValue(mode)) {
+        QByteArray probe;
+        if (!m_scanner.parseValue(m_value->text(), probe)) {
+            KMessageBox::error(this, i18n("Este modo de refino precisa de um valor válido (%1).",
+                                          scanTypeName(currentType())));
+            return;
+        }
+    }
+    runScanJob(false, mode, m_value->text());
 }
 
 void ScannerWindow::newScan()
 {
+    if (m_busy) return;
     m_scanner.reset();
     reloadResults();
 }
@@ -328,6 +400,7 @@ void ScannerWindow::reloadResults()
 
 void ScannerWindow::refreshValues()
 {
+    if (m_busy || !isVisible()) return;
     // Atualiza os valores exibidos (releitura leve das linhas visíveis).
     for (int r = 0; r < m_results->rowCount(); ++r) {
         auto *a = m_results->item(r, 0);
@@ -345,7 +418,7 @@ void ScannerWindow::refreshValues()
         const QByteArray raw = readBytes(addr, m_freezeList.value(r).raw.size());
         if (!raw.isEmpty())
             if (auto *v = m_frozen->item(r, 1))
-                v->setText(m_scanner.formatValue(raw));
+                v->setText(formatAs(m_freezeList.value(r).type, raw));
     }
 }
 
@@ -394,7 +467,12 @@ void ScannerWindow::freezeSelected()
         return;
     }
     const QString shown = m_scanner.formatValue(raw);
-    m_freezeList.append(Frozen{addr, raw, shown});
+    for (const Frozen &f : std::as_const(m_freezeList))
+        if (f.addr == addr) {
+            KMessageBox::information(this, i18n("Esse endereço já está congelado."));
+            return;
+        }
+    m_freezeList.append(Frozen{addr, raw, shown, currentType()});
 
     const int r = m_frozen->rowCount();
     m_frozen->insertRow(r);

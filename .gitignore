@@ -1,5 +1,6 @@
 # Build
 /build/
+/build-*/
 /dist/
 rust/*/target/
 *.o
@@ -22,3 +23,8 @@ po/clean.pot
 
 # Notas internas de handoff (não publicar)
 NOTES.md
+/AppDir/
+/.appimage-tools/
+*.AppImage
+*.pkg.tar.zst
+*.deb

@@ -13,7 +13,18 @@
 #include "panels/ScannerWindow.h"
 #include "panels/SystemTabs.h"
 #include "panels/ProcessProperties.h"
+#include "panels/SysInfoWindow.h"
+#include "panels/FindHandlesDialog.h"
+#include "panels/UpdateDialog.h"
 #include "HelperClient.h"
+
+#include <QDBusConnection>
+#include <QDBusServiceWatcher>
+#include <QDesktopServices>
+#include <QFileInfo>
+#include <QSaveFile>
+#include <QTextStream>
+#include <QUrl>
 
 #include <QComboBox>
 #include <QDir>
@@ -51,6 +62,9 @@
 #include <QSysInfo>
 #include <QTabWidget>
 #include <QClipboard>
+#include <QCursor>
+#include <QDateTime>
+#include <functional>
 #include <QCheckBox>
 #include <QDialog>
 #include <QDialogButtonBox>
@@ -78,6 +92,7 @@ MainWindow::MainWindow(QWidget *parent)
     setWindowTitle(QStringLiteral("ProcForge  [%1@%2]").arg(user, host));
     setWindowIcon(QIcon(QStringLiteral(":/procforge.png")));
     resize(1180, 780);
+    restoreGeometry(QSettings().value(QStringLiteral("ui/geometry")).toByteArray());
 
     // ---- modelo + proxy + árvore ----
     m_model = new ProcessModel(this);
@@ -101,6 +116,18 @@ MainWindow::MainWindow(QWidget *parent)
     m_tree->setColumnWidth(ProcessModel::ColIo, 92);
     m_tree->setColumnWidth(ProcessModel::ColMem, 92);
     m_tree->setColumnWidth(ProcessModel::ColUser, 120);
+    for (int c = ProcessModel::kDefaultColumns; c < ProcessModel::ColumnCount; ++c)
+        m_tree->header()->setSectionHidden(c, true);   // opcionais começam escondidas
+    m_tree->header()->setSectionsMovable(true);
+    m_tree->header()->setContextMenuPolicy(Qt::CustomContextMenu);
+    connect(m_tree->header(), &QWidget::customContextMenuRequested,
+            this, &MainWindow::showHeaderMenu);
+    {
+        // Colunas visíveis, larguras, ordem e ordenação ficam salvas.
+        const QByteArray st = QSettings().value(QStringLiteral("ui/processHeader")).toByteArray();
+        if (!st.isEmpty() && QSettings().value(QStringLiteral("ui/processHeaderColumns")).toInt() == ProcessModel::ColumnCount)
+            m_tree->header()->restoreState(st);
+    }
     connect(m_tree, &QWidget::customContextMenuRequested,
             this, &MainWindow::showContextMenu);
     connect(m_tree->selectionModel(), &QItemSelectionModel::currentChanged,
@@ -111,10 +138,12 @@ MainWindow::MainWindow(QWidget *parent)
     // ---- painel de detalhes sob a árvore (aba Processos) ----
     m_detail = new DetailPanel(this);
     auto *splitter = new QSplitter(Qt::Vertical, this);
+    m_splitter = splitter;
     splitter->addWidget(m_tree);
     splitter->addWidget(m_detail);
     splitter->setStretchFactor(0, 3);
     splitter->setStretchFactor(1, 2);
+    splitter->restoreState(QSettings().value(QStringLiteral("ui/splitter")).toByteArray());
 
     // ---- abas: Processos | Serviços | Rede | Disco ----
     m_tabs = new QTabWidget(this);
@@ -153,6 +182,10 @@ MainWindow::MainWindow(QWidget *parent)
             m_model, &ProcessModel::applySnapshot);
     connect(m_collector, &ProcessCollector::snapshotReady,
             this, &MainWindow::onSnapshot);
+    connect(m_collector, &ProcessCollector::cpuUsage, this, [this](double pct) {
+        m_cpuTotal = pct;
+        m_cpuLabel->setText(i18n("CPU: %1%", QString::number(pct, 'f', 2)));
+    });
     m_collectorThread->start();
     m_currentIntervalMs = QSettings().value(QStringLiteral("intervalMs"), 1000).toInt();
     m_lastScanTimer.start();
@@ -167,10 +200,33 @@ MainWindow::MainWindow(QWidget *parent)
     });
     if (QSettings().value(QStringLiteral("realtimeEvents"), true).toBool() && helper::available())
         m_subscribed = helper::subscribeProcEvents(this, SLOT(onProcEvent(uint,uint,uint)));
+    // Se o helper sair enquanto assinamos (binário atualizado, reinício), assina
+    // de novo: a chamada reativa o helper novo pelo D-Bus.
+    auto *watcher = new QDBusServiceWatcher(QStringLiteral("org.procforge.Helper1"),
+                                            QDBusConnection::systemBus(),
+                                            QDBusServiceWatcher::WatchForUnregistration, this);
+    connect(watcher, &QDBusServiceWatcher::serviceUnregistered, this, &MainWindow::resubscribeSoon);
 
     // ---- ícone na bandeja: reabrir, checar atualização, iniciar com o sistema ----
     m_tray = new TrayIcon(this);
     connect(m_tray, &TrayIcon::quitRequested, qApp, &QApplication::quit);
+    m_updates = new UpdateManager(this, m_tray);
+    connect(m_tray, &TrayIcon::checkUpdatesRequested, this, &MainWindow::checkForUpdates);
+}
+
+void MainWindow::resubscribeSoon()
+{
+    if (!m_subscribed)
+        return;
+    QTimer::singleShot(1500, this, [this]() {
+        if (m_subscribed)
+            helper::subscribeProcEvents(this, SLOT(onProcEvent(uint,uint,uint)));
+    });
+}
+
+void MainWindow::checkForUpdates()
+{
+    m_updates->checkNow(true);
 }
 
 void MainWindow::closeEvent(QCloseEvent *event)
@@ -202,8 +258,13 @@ void MainWindow::buildMenusAndToolbar()
     mHacker->addSeparator();
     connect(mHacker->addAction(ic("edit-find"), i18n("Localizar handles ou DLLs...")),
             &QAction::triggered, this, &MainWindow::findHandlesOrDlls);
-    connect(mHacker->addAction(ic("utilities-system-monitor"), i18n("Informação do sistema...")),
-            &QAction::triggered, this, &MainWindow::systemInformation);
+    auto *actSysInfo = mHacker->addAction(ic("utilities-system-monitor"), i18n("Informação do sistema..."));
+    actSysInfo->setShortcut(QKeySequence(Qt::CTRL | Qt::Key_I));
+    connect(actSysInfo, &QAction::triggered, this, &MainWindow::systemInformation);
+    mHacker->addSeparator();
+    auto *actSave = mHacker->addAction(ic("document-save-as"), i18n("Salvar lista de processos..."));
+    actSave->setShortcut(QKeySequence::Save);
+    connect(actSave, &QAction::triggered, this, &MainWindow::saveProcessList);
     mHacker->addSeparator();
     connect(mHacker->addAction(ic("configure"), i18n("Opções...")), &QAction::triggered,
             this, &MainWindow::openOptions);
@@ -239,6 +300,9 @@ void MainWindow::buildMenusAndToolbar()
             this, [this]() { m_tree->expandAll(); });
     connect(mView->addAction(i18n("Recolher tudo")), &QAction::triggered,
             this, [this]() { m_tree->collapseAll(); });
+    connect(mView->addAction(i18n("Escolher colunas...")), &QAction::triggered, this, [this]() {
+        showHeaderMenu(m_tree->header()->mapFromGlobal(QCursor::pos()));
+    });
 
     // -- Tema (aplica ao vivo) --
     mView->addSeparator();
@@ -317,6 +381,13 @@ void MainWindow::buildMenusAndToolbar()
 
     // -- Ajuda (Help) --
     auto *mHelp = menuBar()->addMenu(i18n("Aj&uda"));
+    connect(mHelp->addAction(ic("update-none"), i18n("Verificar atualizações...")), &QAction::triggered,
+            this, &MainWindow::checkForUpdates);
+    connect(mHelp->addAction(ic("internet-services"), i18n("Página do projeto")), &QAction::triggered,
+            this, []() { QDesktopServices::openUrl(QUrl(QStringLiteral("https://github.com/gabrielmf1998/ProcForge"))); });
+    connect(mHelp->addAction(ic("tools-report-bug"), i18n("Relatar um problema")), &QAction::triggered,
+            this, []() { QDesktopServices::openUrl(QUrl(QStringLiteral("https://github.com/gabrielmf1998/ProcForge/issues"))); });
+    mHelp->addSeparator();
     connect(mHelp->addAction(ic("help-about"), i18n("Sobre o ProcForge")), &QAction::triggered,
             this, &MainWindow::aboutDialog);
 
@@ -335,27 +406,56 @@ void MainWindow::buildMenusAndToolbar()
             &QAction::triggered, this, &MainWindow::systemInformation);
     tb->addSeparator();
     auto *actTerm = tb->addAction(ic("process-stop"), i18n("Terminar"));
-    actTerm->setToolTip(i18n("Terminar o processo selecionado (SIGTERM)"));
+    actTerm->setToolTip(i18n("Terminar o processo selecionado (SIGTERM, tecla Del)"));
     connect(actTerm, &QAction::triggered, this, [this]() { signalCurrent(SIGTERM); });
+    auto *actTree = tb->addAction(ic("edit-delete"), i18n("Matar árvore"));
+    actTree->setToolTip(i18n("Matar o processo e toda a descendência (Shift+Del)"));
+    connect(actTree, &QAction::triggered, this, [this]() { killTreeCurrent(); });
+    auto *actProps = tb->addAction(ic("document-properties"), i18n("Propriedades"));
+    actProps->setToolTip(i18n("Propriedades do processo (Enter)"));
+    connect(actProps, &QAction::triggered, this, [this]() { propertiesCurrent(); });
+
+    // Atalhos que só valem com a lista em foco (Del no campo de busca não mata nada).
+    auto treeShortcut = [this](const QKeySequence &k, auto fn) {
+        auto *a = new QAction(m_tree);
+        a->setShortcut(k);
+        a->setShortcutContext(Qt::WidgetWithChildrenShortcut);
+        connect(a, &QAction::triggered, this, fn);
+        m_tree->addAction(a);
+    };
+    treeShortcut(QKeySequence::Delete, [this]() { signalCurrent(SIGTERM); });
+    treeShortcut(QKeySequence(Qt::SHIFT | Qt::Key_Delete), [this]() { killTreeCurrent(); });
+    treeShortcut(QKeySequence(Qt::Key_Return), [this]() { propertiesCurrent(); });
+    treeShortcut(QKeySequence(Qt::Key_Enter), [this]() { propertiesCurrent(); });
+    treeShortcut(QKeySequence::Copy, [this]() { copyTextCurrent(3); });
+    treeShortcut(QKeySequence(Qt::CTRL | Qt::Key_P), [this]() { goToParentCurrent(); });
 
     auto *spacer = new QWidget(tb);
     spacer->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
     tb->addWidget(spacer);
     m_search = new QLineEdit(tb);
-    m_search->setPlaceholderText(i18n("Buscar processos (Ctrl+K)"));
+    m_search->setObjectName(QStringLiteral("processSearch"));
+    m_search->setPlaceholderText(i18n("Buscar processos (Ctrl+K)  user:nome  pid:N"));
+    m_search->setToolTip(i18n("Busca por nome, linha de comando, usuário ou PID.\n"
+                              "user:root mostra só os processos do root; pid:1234 acha um PID."));
     m_search->setClearButtonEnabled(true);
-    m_search->setMaximumWidth(300);
+    m_search->setMaximumWidth(340);
     m_search->addAction(ic("edit-find"), QLineEdit::LeadingPosition);
     connect(m_search, &QLineEdit::textChanged, m_proxy, &ProcessFilterProxy::setFilterText);
     tb->addWidget(m_search);
     auto *sc = new QAction(this);
-    sc->setShortcut(QKeySequence(Qt::CTRL | Qt::Key_K));
+    sc->setShortcuts({QKeySequence(Qt::CTRL | Qt::Key_K), QKeySequence::Find});
     connect(sc, &QAction::triggered, this, [this]() { m_search->setFocus(); m_search->selectAll(); });
     addAction(sc);
 }
 
 MainWindow::~MainWindow()
 {
+    QSettings st;
+    st.setValue(QStringLiteral("ui/geometry"), saveGeometry());
+    st.setValue(QStringLiteral("ui/processHeader"), m_tree->header()->saveState());
+    st.setValue(QStringLiteral("ui/processHeaderColumns"), int(ProcessModel::ColumnCount));
+    if (m_splitter) st.setValue(QStringLiteral("ui/splitter"), m_splitter->saveState());
     if (m_subscribed)
         helper::unsubscribeProcEvents();
     if (m_collectorThread) {
@@ -399,32 +499,22 @@ void MainWindow::goToProcess(int pid)
 void MainWindow::onSnapshot(const QList<ProcInfo> &procs)
 {
     m_lastScanTimer.restart();
-    double cpu = 0.0;
     m_userCounts.clear();
+    int threads = 0;
     for (const ProcInfo &p : procs) {
-        cpu += p.cpuPercent;
         m_userCounts[p.user]++;
+        threads += p.threads;
     }
-    cpu = qBound(0.0, cpu, 100.0);
-    m_cpuLabel->setText(i18n("CPU: %1%", QString::number(cpu, 'f', 2)));
 
-    quint64 total = 0, avail = 0;
-    QFile mi(QStringLiteral("/proc/meminfo"));
-    if (mi.open(QIODevice::ReadOnly)) {
-        const auto lines = mi.readAll().split('\n');
-        for (const QByteArray &line : lines) {
-            if (line.startsWith("MemTotal:"))     total = line.split(':').at(1).trimmed().split(' ').first().toULongLong() * 1024;
-            else if (line.startsWith("MemAvailable:")) avail = line.split(':').at(1).trimmed().split(' ').first().toULongLong() * 1024;
-        }
-    }
-    if (total > 0) {
+    const procfs::MemInfo mi = procfs::memInfo();
+    if (mi.total > 0) {
         static const KFormat fmt;
-        const quint64 used = (total > avail) ? total - avail : 0;
         m_memLabel->setText(i18n("Memória física: %1 (%2%)",
-                                 fmt.formatByteSize(used, 2),
-                                 QString::number(100.0 * used / total, 'f', 2)));
+                                 fmt.formatByteSize(mi.used(), 2),
+                                 QString::number(100.0 * mi.used() / mi.total, 'f', 2)));
+        if (m_tray) m_tray->setStatus(m_cpuTotal, mi.used(), mi.total);
     }
-    m_countLabel->setText(i18n("Processos: %1", procs.size()));
+    m_countLabel->setText(i18n("Processos: %1   Threads: %2", procs.size(), threads));
 
     if (!m_didInitialExpand && !procs.isEmpty()) {
         m_tree->expandAll();
@@ -443,7 +533,7 @@ void MainWindow::populateUsersMenu()
         auto *a = m_usersMenu->addAction(i18n("%1  (%2 processos)", it.key(), it.value()));
         const QString u = it.key();
         connect(a, &QAction::triggered, this, [this, u]() {
-            m_search->setText(u);   // filtra pela busca
+            m_search->setText(QStringLiteral("user:") + u);   // filtra pelo usuário exato
         });
     }
 }
@@ -545,95 +635,38 @@ void MainWindow::runAsDialog()
 
 void MainWindow::findHandlesOrDlls()
 {
-    bool ok = false;
-    const QString term = QInputDialog::getText(this, i18n("Localizar handles ou DLLs"),
-        i18n("Buscar em fds e bibliotecas mapeadas (nome de arquivo, socket:[inode], .so):"),
-        QLineEdit::Normal, QString(), &ok);
-    if (!ok || term.isEmpty())
-        return;
-
-    auto *dlg = new QDialog(this);
-    dlg->setAttribute(Qt::WA_DeleteOnClose);
-    dlg->setWindowTitle(i18n("Resultados para \"%1\"", term));
-    dlg->resize(760, 520);
-    auto *v = new QVBoxLayout(dlg);
-    auto *tbl = new QTableWidget(0, 4, dlg);
-    tbl->setHorizontalHeaderLabels({i18n("PID"), i18n("Processo"), i18n("Tipo"), i18n("Alvo")});
-    tbl->verticalHeader()->setVisible(false);
-    tbl->setEditTriggers(QAbstractItemView::NoEditTriggers);
-    tbl->horizontalHeader()->setStretchLastSection(true);
-    v->addWidget(tbl);
-
-    int rows = 0;
-    for (int pid : procfs::listPids()) {
-        if (rows > 4000) break;
-        QString comm;
-        { QFile f(QStringLiteral("/proc/%1/comm").arg(pid));
-          if (f.open(QIODevice::ReadOnly)) comm = QString::fromUtf8(f.readAll()).trimmed(); }
-        for (const procfs::FdEntry &e : procfs::listFds(pid)) {
-            if (e.target.contains(term, Qt::CaseInsensitive)) {
-                tbl->insertRow(rows);
-                tbl->setItem(rows, 0, new QTableWidgetItem(QString::number(pid)));
-                tbl->setItem(rows, 1, new QTableWidgetItem(comm));
-                tbl->setItem(rows, 2, new QTableWidgetItem(i18n("fd %1 (%2)", e.fd, e.type)));
-                tbl->setItem(rows, 3, new QTableWidgetItem(e.target));
-                ++rows;
-            }
-        }
-        for (const procfs::MapEntry &m : procfs::listMaps(pid)) {
-            if (!m.path.isEmpty() && m.path.contains(term, Qt::CaseInsensitive)) {
-                tbl->insertRow(rows);
-                tbl->setItem(rows, 0, new QTableWidgetItem(QString::number(pid)));
-                tbl->setItem(rows, 1, new QTableWidgetItem(comm));
-                tbl->setItem(rows, 2, new QTableWidgetItem(i18n("mapa")));
-                tbl->setItem(rows, 3, new QTableWidgetItem(m.path));
-                ++rows;
-            }
-        }
-    }
-    tbl->resizeColumnsToContents();
-    dlg->setWindowTitle(i18n("%1 resultado(s) para \"%2\"", rows, term));
+    auto *dlg = new FindHandlesDialog(this);
+    connect(dlg, &FindHandlesDialog::goToProcess, this, &MainWindow::goToProcess);
     dlg->show();
 }
 
 void MainWindow::systemInformation()
 {
-    static const KFormat fmt;
-    quint64 total = 0, avail = 0;
-    QFile mi(QStringLiteral("/proc/meminfo"));
-    if (mi.open(QIODevice::ReadOnly))
-        for (const QByteArray &line : mi.readAll().split('\n')) {
-            if (line.startsWith("MemTotal:"))      total = line.split(':').at(1).trimmed().split(' ').first().toULongLong() * 1024;
-            else if (line.startsWith("MemAvailable:")) avail = line.split(':').at(1).trimmed().split(' ').first().toULongLong() * 1024;
-        }
-    QString loadavg, uptime, model;
-    { QFile f(QStringLiteral("/proc/loadavg")); if (f.open(QIODevice::ReadOnly)) loadavg = QString::fromUtf8(f.readAll()).section(' ', 0, 2); }
-    { QFile f(QStringLiteral("/proc/uptime")); if (f.open(QIODevice::ReadOnly)) {
-        const double up = QString::fromUtf8(f.readAll()).section(' ', 0, 0).toDouble();
-        uptime = fmt.formatDuration(qint64(up) * 1000); } }
-    { QFile f(QStringLiteral("/proc/cpuinfo")); if (f.open(QIODevice::ReadOnly))
-        for (const QByteArray &line : f.readAll().split('\n'))
-            if (line.startsWith("model name")) { model = QString::fromUtf8(line).section(':', 1).trimmed(); break; } }
-
-    const QString text = i18n(
-        "Kernel: %1\nDistribuição: %2\nCPU: %3 (%4 núcleos)\nMemória: %5 usada de %6\n"
-        "Carga (1/5/15 min): %7\nUptime: %8",
-        QSysInfo::kernelVersion(), QSysInfo::prettyProductName(),
-        model.isEmpty() ? QSysInfo::currentCpuArchitecture() : model,
-        int(actions::onlineCpus().size()),
-        fmt.formatByteSize(total > avail ? total - avail : 0, 2), fmt.formatByteSize(total, 2),
-        loadavg, uptime);
-    KMessageBox::information(this, text, i18n("Informação do sistema"));
+    SysInfoWindow::showWindow(this);
 }
 
 void MainWindow::aboutDialog()
 {
+    // Não ativa o helper (root) só para mostrar a versão: pergunta só se já roda.
+    QString hv;
+    if (helper::running())
+        hv = helper::version();
+    else if (helper::available())
+        hv = i18n("instalado (inicia sob demanda)");
+    const QString url = QStringLiteral("https://github.com/gabrielmf1998/ProcForge");
     KMessageBox::information(this,
-        i18n("ProcForge — clone do Process Hacker para Linux.\n\n"
-             "Manipulação ativa do sistema sobre primitivas nativas: procfs, pidfd, "
-             "ptrace, process_vm_readv/writev, cgroups v2, netlink, eBPF, KWin, "
-             "com helper D-Bus privilegiado e polkit por ação.\n\nQt6 · KDE Frameworks 6 · Wayland."),
-        i18n("Sobre o ProcForge"));
+        i18n("<h3>ProcForge %1</h3>"
+             "<p>Clone do Process Hacker para Linux.</p>"
+             "<p>Manipulação ativa do sistema sobre primitivas nativas: procfs, pidfd, "
+             "ptrace, process_vm_readv/writev, cgroups v2, netlink, eBPF e KWin, "
+             "com helper D-Bus privilegiado e polkit por ação.</p>"
+             "<p>Helper: %2</p>"
+             "<p>Qt %3 · KDE Frameworks 6 · GPL-3.0-or-later<br>%4</p>",
+             QCoreApplication::applicationVersion(),
+             hv.isEmpty() ? i18n("não instalado") : hv,
+             QString::fromLatin1(qVersion()),
+             QStringLiteral("<a href=\"%1\">%2</a>").arg(url, url.mid(8))),
+        i18n("Sobre o ProcForge"), QString(), KMessageBox::Notify | KMessageBox::AllowLink);
 }
 
 void MainWindow::openOptions()
@@ -655,6 +688,14 @@ void MainWindow::openOptions()
     auto *rt = new QCheckBox(i18n("Atualização em tempo real (eventos cn_proc via helper)"), &dlg);
     rt->setChecked(s.value(QStringLiteral("realtimeEvents"), true).toBool());
     form->addRow(QString(), rt);
+
+    auto *autoUpd = new QCheckBox(i18n("Verificar atualizações automaticamente (ao abrir e a cada 12 h)"), &dlg);
+    autoUpd->setChecked(UpdateManager::autoCheckEnabled());
+    form->addRow(QString(), autoUpd);
+
+    auto *confirm = new QCheckBox(i18n("Confirmar antes de terminar ou matar processos"), &dlg);
+    confirm->setChecked(KMessageBox::shouldBeShownContinue(QStringLiteral("confirm-signal")));
+    form->addRow(QString(), confirm);
 
     auto *themeCb = new QComboBox(&dlg);
     themeCb->addItem(i18n("Sistema (Breeze)"), int(theme::System));
@@ -692,6 +733,11 @@ void MainWindow::openOptions()
         helper::unsubscribeProcEvents();
         m_subscribed = false;
     }
+
+    s.setValue(QStringLiteral("autoUpdateCheck"), autoUpd->isChecked());
+    m_updates->applySettings();
+    if (confirm->isChecked()) KMessageBox::enableMessage(QStringLiteral("confirm-signal"));
+    else KMessageBox::saveDontShowAgainContinue(QStringLiteral("confirm-signal"));
 
     const int th = themeCb->currentData().toInt();
     s.setValue(QStringLiteral("theme"), th);
@@ -744,7 +790,9 @@ void MainWindow::showContextMenu(const QPoint &pos)
         return;
 
     QMenu menu(this);
-    menu.addSection(i18n("%1 (PID %2)", pi.name, pi.pid));
+    menu.addSection(m_model->isDying(m_proxy->mapToSource(m_tree->currentIndex()))
+                        ? i18n("%1 (PID %2, encerrado)", pi.name, pi.pid)
+                        : i18n("%1 (PID %2)", pi.name, pi.pid));
 
     connect(menu.addAction(i18n("Propriedades...")), &QAction::triggered,
             this, [this]() { propertiesCurrent(); });
@@ -777,7 +825,22 @@ void MainWindow::showContextMenu(const QPoint &pos)
             this, [this]() { killTreeCurrent(); });
 
     menu.addSeparator();
-    connect(menu.addAction(i18n("Prioridade (nice)...")), &QAction::triggered,
+    // Classes de prioridade do Process Hacker mapeadas para nice.
+    auto *prioMenu = menu.addMenu(i18n("Prioridade"));
+    struct { QString label; int nice; } prios[] = {
+        {i18n("Alta (nice -10)"), -10}, {i18n("Acima do normal (nice -5)"), -5},
+        {i18n("Normal (nice 0)"), 0}, {i18n("Abaixo do normal (nice 5)"), 5},
+        {i18n("Ociosa (nice 19)"), 19},
+    };
+    for (auto &pr : prios) {
+        auto *a = prioMenu->addAction(pr.label);
+        a->setCheckable(true);
+        a->setChecked(pi.nice == pr.nice);
+        const int n = pr.nice;
+        connect(a, &QAction::triggered, this, [this, n]() { setNiceCurrent(n); });
+    }
+    prioMenu->addSeparator();
+    connect(prioMenu->addAction(i18n("Personalizada...")), &QAction::triggered,
             this, [this]() { reniceCurrent(); });
     connect(menu.addAction(i18n("Afinidade de CPU...")), &QAction::triggered,
             this, [this]() { affinityCurrent(); });
@@ -835,16 +898,52 @@ void MainWindow::showContextMenu(const QPoint &pos)
     }
 
     menu.addSeparator();
-    connect(menu.addAction(i18n("Copiar PID")), &QAction::triggered,
-            this, [this]() { copyPidCurrent(); });
+    auto *aParent = menu.addAction(i18n("Ir para o processo pai"));
+    aParent->setEnabled(pi.ppid > 0 && m_model->indexForPid(pi.ppid).isValid());
+    connect(aParent, &QAction::triggered, this, [this]() { goToParentCurrent(); });
+    connect(menu.addAction(ic("document-open-folder"), i18n("Abrir local do arquivo")), &QAction::triggered,
+            this, [this]() { openLocationCurrent(); });
+    connect(menu.addAction(ic("edit-find"), i18n("Procurar handles deste executável...")), &QAction::triggered,
+            this, [this, name = pi.name]() {
+                auto *dlg = new FindHandlesDialog(this);
+                connect(dlg, &FindHandlesDialog::goToProcess, this, &MainWindow::goToProcess);
+                dlg->show();
+                dlg->setTerm(name);
+            });
+    auto *copyMenu = menu.addMenu(ic("edit-copy"), i18n("Copiar"));
+    connect(copyMenu->addAction(i18n("PID")), &QAction::triggered, this, [this]() { copyPidCurrent(); });
+    connect(copyMenu->addAction(i18n("Nome")), &QAction::triggered, this, [this]() { copyTextCurrent(0); });
+    connect(copyMenu->addAction(i18n("Linha de comando")), &QAction::triggered, this, [this]() { copyTextCurrent(1); });
+    connect(copyMenu->addAction(i18n("Caminho do executável")), &QAction::triggered, this, [this]() { copyTextCurrent(2); });
+    connect(copyMenu->addAction(i18n("Linha inteira (Ctrl+C)")), &QAction::triggered, this, [this]() { copyTextCurrent(3); });
 
     menu.exec(m_tree->viewport()->mapToGlobal(pos));
+}
+
+bool MainWindow::confirmSignal(const ProcInfo &pi, int sig)
+{
+    if (sig != SIGTERM && sig != SIGKILL && sig != SIGINT && sig != SIGHUP)
+        return true;
+    QString extra;
+    if (pi.ppid == 0 || pi.pid == 1 || pi.kernel)
+        extra = QStringLiteral("\n\n") + i18n("ATENÇÃO: é um processo do sistema; encerrá-lo pode travar ou reiniciar a máquina.");
+    const QString text = sig == SIGKILL
+        ? i18n("Matar %1 (PID %2) com SIGKILL? O processo não terá chance de salvar nada.", pi.name, pi.pid)
+        : i18n("Terminar %1 (PID %2)?", pi.name, pi.pid);
+    // Processos do sistema sempre perguntam; os demais respeitam "não perguntar de novo".
+    return KMessageBox::warningContinueCancel(
+               this, text + extra, i18n("Terminar processo"),
+               KGuiItem(sig == SIGKILL ? i18n("Matar") : i18n("Terminar"), QStringLiteral("process-stop")),
+               KStandardGuiItem::cancel(),
+               extra.isEmpty() ? QStringLiteral("confirm-signal") : QString()) == KMessageBox::Continue;
 }
 
 void MainWindow::signalCurrent(int sig)
 {
     ProcInfo pi;
     if (!currentInfo(pi))
+        return;
+    if (!confirmSignal(pi, sig))
         return;
     auto rescan = [this]() { QMetaObject::invokeMethod(m_collector, "scanOnce", Qt::QueuedConnection); };
     actions::Result r = actions::sendSignal(pi.pid, pi.starttime, sig);
@@ -956,6 +1055,151 @@ void MainWindow::affinityCurrent()
     helper::setAffinityAsync(pi.pid, pi.starttime, chosen, this, [this](actions::Result hr) {
         if (!hr.ok) KMessageBox::error(this, hr.error);
     });
+}
+
+void MainWindow::setNiceCurrent(int nice)
+{
+    ProcInfo pi;
+    if (!currentInfo(pi))
+        return;
+    const QString name = pi.name;
+    actions::Result r = actions::renice(pi.pid, nice);
+    if (r.ok) { statusBar()->showMessage(i18n("Prioridade de %1: nice %2.", name, nice), 3000); return; }
+    if (!r.needsPrivilege()) { KMessageBox::error(this, r.error); return; }
+    helper::reniceAsync(pi.pid, pi.starttime, nice, this, [this, name, nice](actions::Result hr) {
+        if (!hr.ok) KMessageBox::error(this, hr.error);
+        else statusBar()->showMessage(i18n("Prioridade de %1: nice %2.", name, nice), 3000);
+    });
+}
+
+void MainWindow::goToParentCurrent()
+{
+    ProcInfo pi;
+    if (currentInfo(pi) && pi.ppid > 0)
+        goToProcess(pi.ppid);
+}
+
+static QString exePathOf(const ProcInfo &pi)
+{
+    const QString exe = QFile::symLinkTarget(QStringLiteral("/proc/%1/exe").arg(pi.pid));
+    if (!exe.isEmpty())
+        return exe.endsWith(QLatin1String(" (deleted)")) ? exe.chopped(10) : exe;
+    // Sem permissão (processo de outro usuário): usa o 1º argumento se for absoluto.
+    const QString first = pi.cmdline.section(QLatin1Char(' '), 0, 0);
+    return first.startsWith(QLatin1Char('/')) ? first : QString();
+}
+
+void MainWindow::openLocationCurrent()
+{
+    ProcInfo pi;
+    if (!currentInfo(pi))
+        return;
+    const QString exe = exePathOf(pi);
+    if (exe.isEmpty()) {
+        KMessageBox::information(this, i18n("Não consegui descobrir o executável de %1 (kernel thread ou sem permissão).", pi.name));
+        return;
+    }
+    QDesktopServices::openUrl(QUrl::fromLocalFile(QFileInfo(exe).absolutePath()));
+}
+
+void MainWindow::copyTextCurrent(int what)
+{
+    ProcInfo pi;
+    if (!currentInfo(pi))
+        return;
+    QString text;
+    switch (what) {
+    case 0: text = pi.name; break;
+    case 1: text = pi.cmdline; break;
+    case 2: text = exePathOf(pi); break;
+    default: {
+        QStringList cells;
+        for (int c = 0; c < ProcessModel::ColumnCount; ++c)
+            if (!m_tree->header()->isSectionHidden(c))
+                cells << m_model->cellText(pi, c);
+        text = cells.join(QLatin1Char('\t'));
+    }
+    }
+    QApplication::clipboard()->setText(text);
+}
+
+void MainWindow::showHeaderMenu(const QPoint &pos)
+{
+    QMenu menu(this);
+    menu.addSection(i18n("Colunas"));
+    for (int c = 0; c < ProcessModel::ColumnCount; ++c) {
+        auto *a = menu.addAction(m_model->headerData(c, Qt::Horizontal, Qt::DisplayRole).toString());
+        a->setCheckable(true);
+        a->setChecked(!m_tree->header()->isSectionHidden(c));
+        a->setEnabled(c != ProcessModel::ColName);   // a árvore precisa do Nome
+        connect(a, &QAction::toggled, this, [this, c](bool on) {
+            m_tree->header()->setSectionHidden(c, !on);
+            if (on && m_tree->columnWidth(c) < 30) m_tree->setColumnWidth(c, 90);
+        });
+    }
+    menu.addSeparator();
+    connect(menu.addAction(i18n("Restaurar colunas padrão")), &QAction::triggered, this, [this]() {
+        for (int c = 0; c < ProcessModel::ColumnCount; ++c)
+            m_tree->header()->setSectionHidden(c, c >= ProcessModel::kDefaultColumns);
+        for (int c = 0; c < ProcessModel::ColumnCount; ++c)
+            m_tree->header()->moveSection(m_tree->header()->visualIndex(c), c);
+    });
+    menu.exec(m_tree->header()->mapToGlobal(pos));
+}
+
+void MainWindow::saveProcessList()
+{
+    const QString path = QFileDialog::getSaveFileName(
+        this, i18n("Salvar lista de processos"),
+        QDir::homePath() + QStringLiteral("/procforge-%1.txt")
+            .arg(QDateTime::currentDateTime().toString(QStringLiteral("yyyyMMdd-HHmmss"))),
+        i18n("Texto (*.txt);;CSV (*.csv)"));
+    if (path.isEmpty())
+        return;
+    const bool csv = path.endsWith(QLatin1String(".csv"), Qt::CaseInsensitive);
+    QList<int> cols;
+    for (int v = 0; v < m_tree->header()->count(); ++v) {
+        const int c = m_tree->header()->logicalIndex(v);
+        if (!m_tree->header()->isSectionHidden(c)) cols << c;
+    }
+    auto csvCell = [](QString t) {
+        if (t.contains(QLatin1Char(',')) || t.contains(QLatin1Char('"')) || t.contains(QLatin1Char('\n')))
+            t = QLatin1Char('"') + t.replace(QLatin1Char('"'), QStringLiteral("\"\"")) + QLatin1Char('"');
+        return t;
+    };
+    QSaveFile f(path);
+    if (!f.open(QIODevice::WriteOnly)) {
+        KMessageBox::error(this, i18n("Não consegui gravar %1: %2", path, f.errorString()));
+        return;
+    }
+    QTextStream out(&f);
+    QStringList head;
+    for (int c : cols) head << m_model->headerData(c, Qt::Horizontal, Qt::DisplayRole).toString();
+    out << (csv ? head.join(QLatin1Char(',')) : head.join(QLatin1Char('\t'))) << '\n';
+    int rows = 0;
+    // Percorre o proxy (ordem e filtro da tela), indentando pela profundidade.
+    std::function<void(const QModelIndex &, int)> walk = [&](const QModelIndex &parent, int depth) {
+        for (int r = 0; r < m_proxy->rowCount(parent); ++r) {
+            const QModelIndex idx = m_proxy->index(r, 0, parent);
+            const ProcInfo pi = m_model->infoForIndex(m_proxy->mapToSource(idx));
+            QStringList cells;
+            for (int c : cols) {
+                QString t = m_model->cellText(pi, c);
+                if (c == ProcessModel::ColName && !csv) t = QString(depth * 2, QLatin1Char(' ')) + t;
+                cells << (csv ? csvCell(t) : t);
+            }
+            out << (csv ? cells.join(QLatin1Char(',')) : cells.join(QLatin1Char('\t'))) << '\n';
+            ++rows;
+            walk(idx, depth + 1);
+        }
+    };
+    walk(QModelIndex(), 0);
+    out.flush();
+    if (!f.commit()) {
+        KMessageBox::error(this, i18n("Não consegui gravar %1: %2", path, f.errorString()));
+        return;
+    }
+    statusBar()->showMessage(i18n("%1 processos salvos em %2.", rows, path), 5000);
 }
 
 void MainWindow::copyPidCurrent()

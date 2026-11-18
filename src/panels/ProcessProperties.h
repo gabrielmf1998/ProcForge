@@ -4,6 +4,7 @@
 
 class QTableWidget;
 class QLabel;
+class QTimer;
 
 // Janela de propriedades do processo (como o duplo-clique do Process Hacker):
 // abas Geral, Estatísticas, Threads, Ambiente, Handles (fds), Memória e Token.
@@ -35,4 +36,7 @@ private:
     QTableWidget *m_handles = nullptr;
     QTableWidget *m_maps = nullptr;
     QLabel       *m_header = nullptr;
+    QTimer       *m_timer = nullptr;
+    bool          m_ended = false;
+    bool          stillSameProcess() const;   // pid vivo e com o mesmo starttime
 };

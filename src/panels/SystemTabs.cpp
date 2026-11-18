@@ -15,7 +15,13 @@
 #include <QDir>
 #include <QFile>
 #include <QFontDatabase>
+#include <QCheckBox>
+#include <QComboBox>
 #include <QGroupBox>
+#include <QHBoxLayout>
+#include <QLabel>
+#include <QLineEdit>
+#include <QShowEvent>
 #include <QHeaderView>
 #include <QMenu>
 #include <QPlainTextEdit>
@@ -24,6 +30,7 @@
 #include <QRegularExpression>
 #include <QScrollBar>
 #include <QTableWidget>
+#include <QPointer>
 #include <QTimer>
 #include <QVBoxLayout>
 
@@ -63,13 +70,35 @@ struct TableGuard {
     }
 };
 
-QString runCmd(const QString &prog, const QStringList &args, int ms = 3000)
+// Item que ordena por um valor numérico guardado em SortKey, não pelo texto
+// formatado ("9,5 MiB" < "10 KiB" em ordem alfabética seria errado).
+constexpr int SortKey = Qt::UserRole + 7;
+class NumItem : public QTableWidgetItem {
+public:
+    NumItem(const QString &text, double key) : QTableWidgetItem(text) {
+        setData(SortKey, key);
+        setTextAlignment(Qt::AlignRight | Qt::AlignVCenter);
+    }
+    bool operator<(const QTableWidgetItem &o) const override {
+        return data(SortKey).toDouble() < o.data(SortKey).toDouble();
+    }
+};
+
+// Mostra só as linhas cujo texto (em qualquer coluna) contém o filtro.
+int filterRows(QTableWidget *t, const QString &needle, const std::function<bool(int)> &extra = {})
 {
-    QProcess p;
-    p.start(prog, args);
-    if (!p.waitForFinished(ms))
-        return {};
-    return QString::fromUtf8(p.readAllStandardOutput());
+    int shown = 0;
+    for (int r = 0; r < t->rowCount(); ++r) {
+        bool match = needle.isEmpty();
+        for (int c = 0; !match && c < t->columnCount(); ++c)
+            if (auto *it = t->item(r, c))
+                match = it->text().contains(needle, Qt::CaseInsensitive);
+        if (match && extra && !extra(r))
+            match = false;
+        t->setRowHidden(r, !match);
+        if (match) ++shown;
+    }
+    return shown;
 }
 
 // separa "ip:porta" (v4 ou v6 com colchetes) no último ':'.
@@ -81,6 +110,17 @@ QPair<QString, QString> splitHostPort(const QString &s)
     if (host.startsWith(QLatin1Char('[')) && host.endsWith(QLatin1Char(']')))
         host = host.mid(1, host.size() - 2);
     return {host, s.mid(c + 1)};
+}
+
+// Endereço no formato que o filtro do ss aceita: sem o "%interface" e com
+// colchetes no IPv6 (senão o ':' do endereço confunde o parser de porta).
+QString ssHost(QString host)
+{
+    const int pct = host.indexOf(QLatin1Char('%'));
+    if (pct >= 0) host.truncate(pct);
+    if (host.contains(QLatin1Char(':')))
+        host = QLatin1Char('[') + host + QLatin1Char(']');
+    return host;
 }
 
 // PIDs com "Cortar rede" ativo agora: um .netblock por pid em /run/procforge/
@@ -100,12 +140,83 @@ QList<int> blockedPids()
 
 } // namespace
 
+// ===================== Base =====================
+
+LivePanel::LivePanel(int intervalMs, QWidget *parent) : QWidget(parent)
+{
+    m_timer = new QTimer(this);
+    m_timer->setInterval(intervalMs);
+    connect(m_timer, &QTimer::timeout, this, [this]() { refresh(); });
+}
+
+void LivePanel::showEvent(QShowEvent *e)
+{
+    QWidget::showEvent(e);
+    if (!m_timer->isActive()) {
+        m_timer->start();
+        refresh();
+    }
+}
+
+void LivePanel::hideEvent(QHideEvent *e)
+{
+    QWidget::hideEvent(e);
+    m_timer->stop();
+}
+
+LivePanel::~LivePanel()
+{
+    // Comandos ainda rodando (systemctl lento, pkexec esperando senha): solta
+    // os callbacks antes de ~QWidget apagar os filhos, senão o finished do
+    // ~QProcess chegaria num painel já meio destruído.
+    for (QProcess *p : findChildren<QProcess*>(Qt::FindDirectChildrenOnly)) {
+        QObject::disconnect(p, nullptr, this, nullptr);
+        if (p->state() != QProcess::NotRunning)
+            p->kill();
+    }
+}
+
+void LivePanel::runAsync(const QString &prog, const QStringList &args,
+                         std::function<void(const QString &, const QString &, int)> cb)
+{
+    auto *p = new QProcess(this);
+    connect(p, &QProcess::finished, this, [p, cb](int code, QProcess::ExitStatus st) {
+        cb(QString::fromUtf8(p->readAllStandardOutput()),
+           QString::fromUtf8(p->readAllStandardError()),
+           st == QProcess::NormalExit ? code : -1);
+        p->deleteLater();
+    });
+    connect(p, &QProcess::errorOccurred, this, [p, cb, prog](QProcess::ProcessError err) {
+        if (err != QProcess::FailedToStart)
+            return;
+        cb(QString(), i18n("Não consegui executar %1.", prog), -1);
+        p->deleteLater();
+    });
+    p->start(prog, args);
+}
+
 // ===================== Serviços =====================
 
-ServicesPanel::ServicesPanel(QWidget *parent) : QWidget(parent)
+ServicesPanel::ServicesPanel(QWidget *parent) : LivePanel(3000, parent)
 {
     auto *v = new QVBoxLayout(this);
     v->setContentsMargins(0, 0, 0, 0);
+
+    auto *bar = new QHBoxLayout;
+    m_scope = new QComboBox(this);
+    m_scope->addItem(i18n("Serviços do sistema"));
+    m_scope->addItem(i18n("Serviços do usuário"));
+    bar->addWidget(m_scope);
+    m_filter = new QLineEdit(this);
+    m_filter->setPlaceholderText(i18n("Filtrar serviços"));
+    m_filter->setClearButtonEnabled(true);
+    bar->addWidget(m_filter, 1);
+    m_onlyActive = new QCheckBox(i18n("Só ativos"), this);
+    bar->addWidget(m_onlyActive);
+    m_count = new QLabel(this);
+    bar->addWidget(m_count);
+    v->addLayout(bar);
+
     m_tbl = new QTableWidget(0, 6, this);
     m_tbl->setHorizontalHeaderLabels({i18n("Unidade"), i18n("Carregada"), i18n("Ativa"),
                                       i18n("Sub"), i18n("Ativação"), i18n("Descrição")});
@@ -118,6 +229,14 @@ ServicesPanel::ServicesPanel(QWidget *parent) : QWidget(parent)
     m_tbl->sortByColumn(0, Qt::AscendingOrder);
     m_tbl->setContextMenuPolicy(Qt::CustomContextMenu);
     v->addWidget(m_tbl);
+
+    connect(m_filter, &QLineEdit::textChanged, this, &ServicesPanel::applyFilter);
+    connect(m_onlyActive, &QCheckBox::toggled, this, &ServicesPanel::applyFilter);
+    connect(m_scope, &QComboBox::currentIndexChanged, this, [this]() {
+        m_tbl->setRowCount(0);
+        refresh();
+    });
+    connect(m_tbl, &QAbstractItemView::doubleClicked, this, &ServicesPanel::showStatus);
 
     connect(m_tbl, &QWidget::customContextMenuRequested, this, [this](const QPoint &p) {
         if (currentUnit().isEmpty()) return;
@@ -134,14 +253,15 @@ ServicesPanel::ServicesPanel(QWidget *parent) : QWidget(parent)
         menu.addSeparator();
         connect(menu.addAction(i18n("Status / journal...")), &QAction::triggered, this, &ServicesPanel::showStatus);
         connect(menu.addAction(i18n("Ir para o processo")),  &QAction::triggered, this, &ServicesPanel::gotoOwner);
+        connect(menu.addAction(i18n("Copiar nome")), &QAction::triggered, this, [this]{
+            QApplication::clipboard()->setText(currentUnit()); });
         menu.exec(m_tbl->viewport()->mapToGlobal(p));
     });
+}
 
-    auto *t = new QTimer(this);
-    t->setInterval(3000);
-    connect(t, &QTimer::timeout, this, &ServicesPanel::refresh);
-    t->start();
-    refresh();
+QStringList ServicesPanel::scopeArgs() const
+{
+    return m_scope->currentIndex() == 1 ? QStringList{QStringLiteral("--user")} : QStringList{};
 }
 
 QString ServicesPanel::currentUnit() const
@@ -150,21 +270,33 @@ QString ServicesPanel::currentUnit() const
     return (r >= 0 && m_tbl->item(r, 0)) ? m_tbl->item(r, 0)->text() : QString();
 }
 
+void ServicesPanel::applyFilter()
+{
+    const int shown = filterRows(m_tbl, m_filter->text().trimmed(), [this](int r) {
+        return !m_onlyActive->isChecked()
+            || (m_tbl->item(r, 2) && m_tbl->item(r, 2)->text() == QLatin1String("active"));
+    });
+    m_count->setText(i18n("%1 de %2", shown, m_tbl->rowCount()));
+}
+
 void ServicesPanel::runVerb(const QString &verb)
 {
     const QString unit = currentUnit();
     if (unit.isEmpty()) return;
-    // systemctl dispara o polkit por conta própria para unidades de sistema.
-    QProcess::startDetached(QStringLiteral("systemctl"), {verb, unit});
+    // systemctl pede a autorização ao polkit por conta própria (unidades de sistema).
+    runAsync(QStringLiteral("systemctl"), scopeArgs() + QStringList{verb, unit},
+             [this, verb, unit](const QString &, const QString &err, int code) {
+        if (code != 0)
+            KMessageBox::error(this, i18n("systemctl %1 %2 falhou:\n%3", verb, unit,
+                                          err.trimmed().isEmpty() ? i18n("código %1", code) : err.trimmed()));
+        refresh();
+    });
 }
 
 void ServicesPanel::showStatus()
 {
     const QString unit = currentUnit();
     if (unit.isEmpty()) return;
-    const QString out = runCmd(QStringLiteral("systemctl"),
-                               {QStringLiteral("status"), QStringLiteral("--no-pager"),
-                                QStringLiteral("--lines=50"), unit}, 4000);
     auto *dlg = new QDialog(this);
     dlg->setAttribute(Qt::WA_DeleteOnClose);
     dlg->setWindowTitle(i18n("Status — %1", unit));
@@ -173,66 +305,91 @@ void ServicesPanel::showStatus()
     auto *te = new QPlainTextEdit(dlg);
     te->setReadOnly(true);
     te->setFont(QFontDatabase::systemFont(QFontDatabase::FixedFont));
-    te->setPlainText(out.isEmpty() ? i18n("(sem saída)") : out);
+    te->setPlainText(i18n("carregando..."));
     v->addWidget(te);
     dlg->show();
+    QPointer<QPlainTextEdit> guard(te);
+    runAsync(QStringLiteral("systemctl"),
+             scopeArgs() + QStringList{QStringLiteral("status"), QStringLiteral("--no-pager"),
+                                       QStringLiteral("--lines=50"), QStringLiteral("--"), unit},
+             [guard](const QString &out, const QString &err, int) {
+        if (!guard) return;
+        const QString text = (out + err).trimmed();
+        guard->setPlainText(text.isEmpty() ? i18n("(sem saída)") : text);
+    });
 }
 
 void ServicesPanel::gotoOwner()
 {
     const QString unit = currentUnit();
     if (unit.isEmpty()) return;
-    const int pid = runCmd(QStringLiteral("systemctl"),
-                           {QStringLiteral("show"), QStringLiteral("-p"),
-                            QStringLiteral("MainPID"), QStringLiteral("--value"), unit}).trimmed().toInt();
-    if (pid > 0)
-        Q_EMIT goToProcess(pid);
-    else
-        KMessageBox::information(this, i18n("O serviço %1 não tem processo principal em execução.", unit));
+    runAsync(QStringLiteral("systemctl"),
+             scopeArgs() + QStringList{QStringLiteral("show"), QStringLiteral("-p"),
+                                       QStringLiteral("MainPID"), QStringLiteral("--value"), unit},
+             [this, unit](const QString &out, const QString &, int) {
+        const int pid = out.trimmed().toInt();
+        if (pid > 0)
+            Q_EMIT goToProcess(pid);
+        else
+            KMessageBox::information(this, i18n("O serviço %1 não tem processo principal em execução.", unit));
+    });
 }
 
 void ServicesPanel::refresh()
 {
-    // Estado de ativação (enabled/disabled/static/masked) por unidade.
-    QHash<QString, QString> enableState;
-    for (const QString &line : runCmd(QStringLiteral("systemctl"),
-             {QStringLiteral("list-unit-files"), QStringLiteral("--type=service"),
-              QStringLiteral("--no-legend"), QStringLiteral("--plain"), QStringLiteral("--no-pager")})
-             .split(QLatin1Char('\n'))) {
-        const QStringList f = line.simplified().split(QLatin1Char(' '));
-        if (f.size() >= 2) enableState.insert(f.at(0), f.at(1));
-    }
-
-    const QString out = runCmd(QStringLiteral("systemctl"),
-             {QStringLiteral("list-units"), QStringLiteral("--type=service"),
-              QStringLiteral("--all"), QStringLiteral("--no-legend"),
-              QStringLiteral("--plain"), QStringLiteral("--no-pager")});
-    if (out.isEmpty()) return;
-
-    TableGuard g(m_tbl);
-    int row = 0;
-    for (const QString &line : out.split(QLatin1Char('\n'))) {
-        const QString l = line.trimmed();
-        if (l.isEmpty()) continue;
-        const QStringList f = l.split(QRegularExpression(QStringLiteral("\\s+")));
-        if (f.size() < 4) continue;
-        const QString unit = f.at(0), load = f.at(1), active = f.at(2), sub = f.at(3);
-        m_tbl->insertRow(row);
-        m_tbl->setItem(row, 0, new QTableWidgetItem(unit));
-        m_tbl->setItem(row, 1, new QTableWidgetItem(load));
-        m_tbl->setItem(row, 2, new QTableWidgetItem(active));
-        m_tbl->setItem(row, 3, new QTableWidgetItem(sub));
-        m_tbl->setItem(row, 4, new QTableWidgetItem(enableState.value(unit, QStringLiteral("-"))));
-        m_tbl->setItem(row, 5, new QTableWidgetItem(f.mid(4).join(QLatin1Char(' '))));
-        if (active != QLatin1String("active"))
-            for (int c = 0; c < 6; ++c) m_tbl->item(row, c)->setForeground(QColor(0x9a, 0x9a, 0x9a));
-        ++row;
-    }
+    if (m_busy) return;          // a consulta anterior ainda não voltou
+    m_busy = true;
+    const QStringList scope = scopeArgs();
+    // Estado de ativação (enabled/disabled/static/masked) por unidade, depois a lista.
+    runAsync(QStringLiteral("systemctl"),
+             scope + QStringList{QStringLiteral("list-unit-files"), QStringLiteral("--type=service"),
+                                 QStringLiteral("--no-legend"), QStringLiteral("--plain"), QStringLiteral("--no-pager")},
+             [this, scope](const QString &files, const QString &, int) {
+        QHash<QString, QString> enableState;
+        for (const QString &line : files.split(QLatin1Char('\n'))) {
+            const QStringList f = line.simplified().split(QLatin1Char(' '));
+            if (f.size() >= 2) enableState.insert(f.at(0), f.at(1));
+        }
+        runAsync(QStringLiteral("systemctl"),
+                 scope + QStringList{QStringLiteral("list-units"), QStringLiteral("--type=service"),
+                                     QStringLiteral("--all"), QStringLiteral("--no-legend"),
+                                     QStringLiteral("--plain"), QStringLiteral("--no-pager")},
+                 [this, enableState, scope](const QString &out, const QString &, int) {
+            m_busy = false;
+            if (scope != scopeArgs()) { refresh(); return; }   // trocou de escopo no meio
+            if (out.isEmpty()) { applyFilter(); return; }
+            {
+                TableGuard g(m_tbl);
+                int row = 0;
+                static const QRegularExpression ws(QStringLiteral("\\s+"));
+                for (const QString &line : out.split(QLatin1Char('\n'))) {
+                    const QString l = line.trimmed();
+                    if (l.isEmpty()) continue;
+                    const QStringList f = l.split(ws);
+                    if (f.size() < 4) continue;
+                    const QString unit = f.at(0), load = f.at(1), active = f.at(2), sub = f.at(3);
+                    m_tbl->insertRow(row);
+                    m_tbl->setItem(row, 0, new QTableWidgetItem(unit));
+                    m_tbl->setItem(row, 1, new QTableWidgetItem(load));
+                    m_tbl->setItem(row, 2, new QTableWidgetItem(active));
+                    m_tbl->setItem(row, 3, new QTableWidgetItem(sub));
+                    m_tbl->setItem(row, 4, new QTableWidgetItem(enableState.value(unit, QStringLiteral("-"))));
+                    m_tbl->setItem(row, 5, new QTableWidgetItem(f.mid(4).join(QLatin1Char(' '))));
+                    if (active == QLatin1String("failed"))
+                        for (int c = 0; c < 6; ++c) m_tbl->item(row, c)->setForeground(QColor(0xd0, 0x40, 0x40));
+                    else if (active != QLatin1String("active"))
+                        for (int c = 0; c < 6; ++c) m_tbl->item(row, c)->setForeground(QColor(0x9a, 0x9a, 0x9a));
+                    ++row;
+                }
+            }
+            applyFilter();
+        });
+    });
 }
 
 // ===================== Rede =====================
 
-NetworkPanel::NetworkPanel(QWidget *parent) : QWidget(parent)
+NetworkPanel::NetworkPanel(QWidget *parent) : LivePanel(3000, parent)
 {
     auto *v = new QVBoxLayout(this);
     v->setContentsMargins(0, 0, 0, 0);
@@ -271,6 +428,19 @@ NetworkPanel::NetworkPanel(QWidget *parent) : QWidget(parent)
         menu.exec(m_blockedTbl->viewport()->mapToGlobal(p));
     });
 
+    auto *bar = new QHBoxLayout;
+    m_filter = new QLineEdit(this);
+    m_filter->setPlaceholderText(i18n("Filtrar conexões (endereço, porta, processo)"));
+    m_filter->setClearButtonEnabled(true);
+    bar->addWidget(m_filter, 1);
+    m_onlyListen = new QCheckBox(i18n("Só portas abertas (LISTEN)"), this);
+    bar->addWidget(m_onlyListen);
+    m_count = new QLabel(this);
+    bar->addWidget(m_count);
+    v->addLayout(bar);
+    connect(m_filter, &QLineEdit::textChanged, this, &NetworkPanel::applyFilter);
+    connect(m_onlyListen, &QCheckBox::toggled, this, &NetworkPanel::applyFilter);
+
     m_tbl = new QTableWidget(0, 5, this);
     m_tbl->setHorizontalHeaderLabels({i18n("Proto"), i18n("Estado"),
                                       i18n("Local"), i18n("Remoto"), i18n("Processo")});
@@ -293,26 +463,40 @@ NetworkPanel::NetworkPanel(QWidget *parent) : QWidget(parent)
         const QString peer  = m_tbl->item(row, 3) ? m_tbl->item(row, 3)->text() : QString();
         auto killOwner = [this, pid](int sig) {
             if (pid <= 0) return;
-            actions::Result r = actions::sendSignal(pid, 0, sig);
-            if (!r.ok && r.needsPrivilege()) r = helper::sendSignal(pid, 0, sig);
-            if (!r.ok) KMessageBox::error(this, r.error);
+            procfs::StatFields st;
+            const quint64 starttime = procfs::readStat(pid, st) ? st.starttime : 0;
+            actions::Result r = actions::sendSignal(pid, starttime, sig);
+            if (r.ok || !r.needsPrivilege()) {
+                if (!r.ok) KMessageBox::error(this, r.error);
+                return;
+            }
+            helper::sendSignalAsync(pid, starttime, sig, this, [this](actions::Result hr) {
+                if (!hr.ok) KMessageBox::error(this, hr.error);
+            });
         };
         QMenu menu(this);
         auto *aClose = menu.addAction(i18n("Fechar esta conexão (ss -K)"));
-        connect(aClose, &QAction::triggered, this, [this, proto, local, peer]() {
+        connect(aClose, &QAction::triggered, this, [this, local, peer]() {
             const auto l = splitHostPort(local);
             const auto r = splitHostPort(peer);
-            if (l.second.isEmpty() || r.second.isEmpty()) {
+            if (l.second.isEmpty() || r.second.isEmpty() || r.second == QLatin1String("*")) {
                 KMessageBox::information(this, i18n("Não consegui montar o filtro da conexão."));
                 return;
             }
-            const QString filter = QStringLiteral("src %1 sport = %2 dst %3 dport = %4")
-                                       .arg(l.first, l.second, r.first, r.second);
-            // ss -K precisa de root; pkexec dispara o polkit.
-            QProcess::startDetached(QStringLiteral("pkexec"), {QStringLiteral("ss"),
-                                    QStringLiteral("-K"), filter});
+            // ss -K precisa de root; pkexec dispara o polkit. Cada pedaço do
+            // filtro vai como argumento próprio (sem shell).
+            runAsync(QStringLiteral("pkexec"),
+                     {QStringLiteral("ss"), QStringLiteral("-K"),
+                      QStringLiteral("src"), ssHost(l.first), QStringLiteral("sport"), QStringLiteral("="), l.second,
+                      QStringLiteral("dst"), ssHost(r.first), QStringLiteral("dport"), QStringLiteral("="), r.second},
+                     [this](const QString &, const QString &err, int code) {
+                if (code != 0 && code != 126 && !err.trimmed().isEmpty())   // 126 = cancelado no polkit
+                    KMessageBox::error(this, err.trimmed());
+                refresh();
+            });
         });
-        aClose->setEnabled(proto.startsWith(QLatin1String("tcp")) || proto.startsWith(QLatin1String("udp")));
+        aClose->setEnabled((proto.startsWith(QLatin1String("tcp")) || proto.startsWith(QLatin1String("udp")))
+                           && !peer.endsWith(QLatin1String(":*")));
         menu.addSeparator();
         connect(menu.addAction(i18n("Matar processo (SIGTERM)")), &QAction::triggered, this, [killOwner]{ killOwner(SIGTERM); });
         connect(menu.addAction(i18n("Matar processo (SIGKILL)")), &QAction::triggered, this, [killOwner]{ killOwner(SIGKILL); });
@@ -320,16 +504,19 @@ NetworkPanel::NetworkPanel(QWidget *parent) : QWidget(parent)
             connect(menu.addAction(i18n("Ir para o processo")), &QAction::triggered, this, [this, pid]{ Q_EMIT goToProcess(pid); });
             connect(menu.addAction(i18n("Copiar PID")), &QAction::triggered, this, [pid]{ QApplication::clipboard()->setText(QString::number(pid)); });
         }
+        connect(menu.addAction(i18n("Copiar endereço remoto")), &QAction::triggered, this, [peer]{ QApplication::clipboard()->setText(peer); });
         menu.exec(m_tbl->viewport()->mapToGlobal(p));
     });
+}
 
-    auto *t = new QTimer(this);
-    t->setInterval(3000);
-    connect(t, &QTimer::timeout, this, &NetworkPanel::refresh);
-    connect(t, &QTimer::timeout, this, &NetworkPanel::refreshBlocked);
-    t->start();
-    refresh();
-    refreshBlocked();
+void NetworkPanel::applyFilter()
+{
+    const int shown = filterRows(m_tbl, m_filter->text().trimmed(), [this](int r) {
+        if (!m_onlyListen->isChecked()) return true;
+        const QString st = m_tbl->item(r, 1) ? m_tbl->item(r, 1)->text() : QString();
+        return st == QLatin1String("LISTEN") || st == QLatin1String("UNCONN");
+    });
+    m_count->setText(i18n("%1 de %2", shown, m_tbl->rowCount()));
 }
 
 void NetworkPanel::refreshBlocked()
@@ -364,37 +551,45 @@ void NetworkPanel::refreshBlocked()
 
 void NetworkPanel::refresh()
 {
-    const QString out = runCmd(QStringLiteral("ss"), {QStringLiteral("-tunapH")});
-    static const QRegularExpression procRe(QStringLiteral("\"([^\"]+)\",pid=(\\d+)"));
-
-    TableGuard g(m_tbl, 2); // chave de seleção pela coluna "Local"
-    int row = 0;
-    for (const QString &line : out.split(QLatin1Char('\n'))) {
-        const QStringList f = line.simplified().split(QLatin1Char(' '));
-        if (f.size() < 5) continue;
-        const QString proto = f.at(0), state = f.at(1), local = f.value(4), peer = f.value(5);
-        QString proc;
-        int pidNum = 0;
-        const auto m = procRe.match(line);
-        if (m.hasMatch()) {
-            proc = QStringLiteral("%1 (pid %2)").arg(m.captured(1), m.captured(2));
-            pidNum = m.captured(2).toInt();
+    refreshBlocked();
+    if (m_busy) return;
+    m_busy = true;
+    runAsync(QStringLiteral("ss"), {QStringLiteral("-tunapH")},
+             [this](const QString &out, const QString &, int) {
+        m_busy = false;
+        static const QRegularExpression procRe(QStringLiteral("\"([^\"]+)\",pid=(\\d+)"));
+        {
+            TableGuard g(m_tbl, 2); // chave de seleção pela coluna "Local"
+            int row = 0;
+            for (const QString &line : out.split(QLatin1Char('\n'))) {
+                const QStringList f = line.simplified().split(QLatin1Char(' '));
+                if (f.size() < 5) continue;
+                const QString proto = f.at(0), state = f.at(1), local = f.value(4), peer = f.value(5);
+                QString proc;
+                int pidNum = 0;
+                const auto m = procRe.match(line);
+                if (m.hasMatch()) {
+                    proc = QStringLiteral("%1 (pid %2)").arg(m.captured(1), m.captured(2));
+                    pidNum = m.captured(2).toInt();
+                }
+                m_tbl->insertRow(row);
+                m_tbl->setItem(row, 0, new QTableWidgetItem(proto));
+                m_tbl->setItem(row, 1, new QTableWidgetItem(state));
+                m_tbl->setItem(row, 2, new QTableWidgetItem(local));
+                m_tbl->setItem(row, 3, new QTableWidgetItem(peer));
+                auto *procItem = new QTableWidgetItem(proc);
+                procItem->setData(Qt::UserRole, pidNum);
+                m_tbl->setItem(row, 4, procItem);
+                ++row;
+            }
         }
-        m_tbl->insertRow(row);
-        m_tbl->setItem(row, 0, new QTableWidgetItem(proto));
-        m_tbl->setItem(row, 1, new QTableWidgetItem(state));
-        m_tbl->setItem(row, 2, new QTableWidgetItem(local));
-        m_tbl->setItem(row, 3, new QTableWidgetItem(peer));
-        auto *procItem = new QTableWidgetItem(proc);
-        procItem->setData(Qt::UserRole, pidNum);
-        m_tbl->setItem(row, 4, procItem);
-        ++row;
-    }
+        applyFilter();
+    });
 }
 
 // ===================== Disco =====================
 
-DiskPanel::DiskPanel(QWidget *parent) : QWidget(parent)
+DiskPanel::DiskPanel(QWidget *parent) : LivePanel(1500, parent)
 {
     auto *v = new QVBoxLayout(this);
     v->setContentsMargins(0, 0, 0, 0);
@@ -408,12 +603,6 @@ DiskPanel::DiskPanel(QWidget *parent) : QWidget(parent)
     m_tbl->setSortingEnabled(true);
     m_tbl->sortByColumn(0, Qt::AscendingOrder);
     v->addWidget(m_tbl);
-
-    auto *t = new QTimer(this);
-    t->setInterval(1500);
-    connect(t, &QTimer::timeout, this, &DiskPanel::refresh);
-    t->start();
-    refresh();
 }
 
 void DiskPanel::refresh()
@@ -445,10 +634,10 @@ void DiskPanel::refresh()
         }
         m_tbl->insertRow(row);
         m_tbl->setItem(row, 0, new QTableWidgetItem(name));
-        m_tbl->setItem(row, 1, new QTableWidgetItem(rrate >= 1 ? fmt.formatByteSize(rrate, 1) + QStringLiteral("/s") : QString()));
-        m_tbl->setItem(row, 2, new QTableWidgetItem(wrate >= 1 ? fmt.formatByteSize(wrate, 1) + QStringLiteral("/s") : QString()));
-        m_tbl->setItem(row, 3, new QTableWidgetItem(fmt.formatByteSize(sr * 512.0, 1)));
-        m_tbl->setItem(row, 4, new QTableWidgetItem(fmt.formatByteSize(sw * 512.0, 1)));
+        m_tbl->setItem(row, 1, new NumItem(rrate >= 1 ? fmt.formatByteSize(rrate, 1) + QStringLiteral("/s") : QString(), rrate));
+        m_tbl->setItem(row, 2, new NumItem(wrate >= 1 ? fmt.formatByteSize(wrate, 1) + QStringLiteral("/s") : QString(), wrate));
+        m_tbl->setItem(row, 3, new NumItem(fmt.formatByteSize(sr * 512.0, 1), double(sr)));
+        m_tbl->setItem(row, 4, new NumItem(fmt.formatByteSize(sw * 512.0, 1), double(sw)));
         ++row;
     }
     m_prev = cur;

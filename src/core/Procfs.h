@@ -17,6 +17,22 @@ struct StatFields {
     quint64 starttime  = 0;   // ticks desde o boot
     quint64 vsizeBytes = 0;
     quint64 rssBytes   = 0;
+    int     priority   = 0;   // campo 18 (prioridade do kernel)
+    int     nice       = 0;   // campo 19 (-20..19)
+};
+
+// Tempos agregados de CPU de /proc/stat (linha "cpu" ou "cpuN").
+struct CpuTimes {
+    quint64 total = 0;   // soma de todos os campos
+    quint64 idle  = 0;   // idle + iowait
+};
+
+// Resumo de /proc/meminfo (bytes).
+struct MemInfo {
+    quint64 total = 0, available = 0, free = 0, buffers = 0, cached = 0;
+    quint64 swapTotal = 0, swapFree = 0;
+    quint64 used() const { return total > available ? total - available : 0; }
+    quint64 swapUsed() const { return swapTotal > swapFree ? swapTotal - swapFree : 0; }
 };
 
 // Um descritor de arquivo aberto por um processo (/proc/<pid>/fd/<n>).
@@ -40,13 +56,22 @@ struct MapEntry {
 QList<int>   listPids();                             // varre /proc por entradas numéricas
 bool         readStat(int pid, StatFields &out);     // parse de /proc/<pid>/stat
 quint64      totalCpuTicks();                        // soma da 1ª linha de /proc/stat
+// [0] = agregado, [1..n] = cada núcleo. Vazio se /proc/stat não puder ser lido.
+QList<CpuTimes> cpuTimes();
+MemInfo      memInfo();
+// Bytes recebidos/enviados somados em todas as interfaces menos "lo".
+bool         netTotals(quint64 *rx, quint64 *tx);
+// Bytes lidos/escritos somados nos discos inteiros (sem partições/loop/ram/zram).
+bool         diskTotals(quint64 *read, quint64 *written);
 quint32      uidOf(int pid);                          // st_uid de /proc/<pid>
 QString      cmdlineOf(int pid);                     // /proc/<pid>/cmdline (NUL -> espaço)
 QString      cgroupOf(int pid);                      // caminho cgroup v2 (linha "0::/...")
 bool         ioBytesOf(int pid, quint64 *total);     // read_bytes+write_bytes de /proc/<pid>/io
+bool         ioBytesOf(int pid, quint64 *read, quint64 *written);
 QString      userName(quint32 uid);                  // getpwuid com cache
 long         clockTicksPerSec();                     // sysconf(_SC_CLK_TCK)
 long         onlineCpus();                            // sysconf(_SC_NPROCESSORS_ONLN)
+qint64       bootTimeSecs();                         // btime de /proc/stat (epoch)
 
 QList<FdEntry>  listFds(int pid);
 QList<MapEntry> listMaps(int pid);

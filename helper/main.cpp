@@ -3,9 +3,12 @@
 #include <QCoreApplication>
 #include <QDBusConnection>
 #include <QDBusError>
+#include <QElapsedTimer>
 #include <QTimer>
 
 #include <cstdio>
+#include <cstring>
+#include <unistd.h>
 #include <syslog.h>
 
 int main(int argc, char **argv)
@@ -43,6 +46,32 @@ int main(int argc, char **argv)
     });
     QObject::connect(&helper, &Helper::activity, &idle, qOverload<>(&QTimer::start));
     idle.start();
+
+    // Após uma atualização o binário em disco é trocado: este processo antigo
+    // sai sozinho (com assinantes ou não) e o D-Bus ativa o novo na próxima
+    // chamada. A GUI reassina os eventos ao ver o nome sumir do barramento.
+    QElapsedTimer sinceActivity;
+    sinceActivity.start();
+    QObject::connect(&helper, &Helper::activity, &app, [&]() { sinceActivity.restart(); });
+    QTimer selfCheck;
+    selfCheck.setInterval(10000);
+    QObject::connect(&selfCheck, &QTimer::timeout, &app, [&]() {
+        // Os métodos rodam síncronos (polkit incluso), então aqui não há chamada
+        // em andamento; ainda assim espera 3 s de silêncio para não perder uma
+        // chamada que acabou de chegar na fila.
+        if (sinceActivity.elapsed() < 3000)
+            return;
+        char buf[4096];
+        const ssize_t n = ::readlink("/proc/self/exe", buf, sizeof buf - 1);
+        if (n > 0) {
+            buf[n] = 0;
+            if (std::strstr(buf, " (deleted)")) {
+                ::syslog(LOG_AUTHPRIV | LOG_INFO, "procforged: binário atualizado, saindo");
+                app.quit();
+            }
+        }
+    });
+    selfCheck.start();
 
     ::syslog(LOG_AUTHPRIV | LOG_INFO, "procforged pronto em org.procforge.Helper1");
     return app.exec();

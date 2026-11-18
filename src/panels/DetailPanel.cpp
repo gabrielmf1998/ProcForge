@@ -6,6 +6,16 @@
 #include <KMessageBox>
 
 #include <QCheckBox>
+#include <QDir>
+#include <QFile>
+#include <QFileDialog>
+#include <QFileInfo>
+#include <QApplication>
+#include <QPointer>
+#include <QThread>
+#include <cerrno>
+#include <sys/stat.h>
+#include <unistd.h>
 #include <QHeaderView>
 #include <QLabel>
 #include <QPushButton>
@@ -141,8 +151,8 @@ DetailPanel::DetailPanel(QWidget *parent)
         actClose->setToolTip(i18n("Injeta close() no processo alvo (libera a trava)."));
         connect(actClose, &QAction::triggered, this, &DetailPanel::onCloseFd);
         auto *actDup = bar->addAction(QIcon::fromTheme(QStringLiteral("edit-copy")),
-                                      i18n("Duplicar p/ mim"));
-        actDup->setToolTip(i18n("Copia o fd para este processo via pidfd_getfd."));
+                                      i18n("Salvar cópia..."));
+        actDup->setToolTip(i18n("Duplica o fd via pidfd_getfd e salva o conteúdo do arquivo (recupera até arquivo apagado que o processo ainda mantém aberto)."));
         connect(actDup, &QAction::triggered, this, &DetailPanel::onDupFd);
         v->addWidget(bar);
 
@@ -265,10 +275,51 @@ void DetailPanel::onDupFd()
     }
     const procfs::FdEntry e = m_fdModel->at(cur.row());
     const inject::Result r = inject::dupForeignFd(m_pid, e.fd);
-    if (r.ok)
-        KMessageBox::information(
-            this, i18n("fd %1 duplicado para nós via pidfd_getfd (fd local %2). "
-                       "O fd do dono continua aberto.", e.fd, r.retval));
-    else
+    if (!r.ok) {
         KMessageBox::error(this, r.error);
+        return;
+    }
+    const int local = int(r.retval);
+    struct stat sb{};
+    if (::fstat(local, &sb) != 0 || !S_ISREG(sb.st_mode)) {
+        ::close(local);
+        KMessageBox::information(this,
+            i18n("O fd %1 foi duplicado via pidfd_getfd, mas não é um arquivo comum (%2); "
+                 "só arquivos podem ser salvos. O fd do dono continua aberto.", e.fd, e.type));
+        return;
+    }
+    // Arquivo comum (inclusive apagado ou memfd): salva uma cópia do conteúdo.
+    QString base = QFileInfo(e.target.section(QLatin1String(" (deleted)"), 0, 0)).fileName();
+    if (base.isEmpty() || base.contains(QLatin1Char(':'))) base = QStringLiteral("fd-%1").arg(e.fd);
+    const QString path = QFileDialog::getSaveFileName(
+        this, i18n("Salvar cópia do arquivo aberto (%1)", KFormat().formatByteSize(double(sb.st_size))),
+        QDir::homePath() + QLatin1Char('/') + base);
+    if (path.isEmpty()) { ::close(local); return; }
+    // Cópia numa thread: arquivo grande (log apagado de GBs, memfd) não trava a janela.
+    QPointer<DetailPanel> self(this);
+    QThread *t = QThread::create([local, path, self]() {
+        QFile out(path);
+        bool ok = out.open(QIODevice::WriteOnly | QIODevice::Truncate);
+        QByteArray buf(1 << 20, Qt::Uninitialized);
+        off_t off = 0;
+        while (ok) {
+            const ssize_t n = ::pread(local, buf.data(), buf.size(), off);
+            if (n < 0) { if (errno == EINTR) continue; ok = false; break; }
+            if (n == 0) break;
+            ok = out.write(buf.constData(), n) == n;
+            off += n;
+        }
+        ::close(local);
+        out.close();
+        if (!ok) out.remove();
+        QMetaObject::invokeMethod(qApp, [self, ok, path, off]() {
+            if (!self) return;
+            if (ok)
+                KMessageBox::information(self, i18n("Cópia salva em %1 (%2).", path, KFormat().formatByteSize(double(off))));
+            else
+                KMessageBox::error(self, i18n("Falha ao salvar a cópia em %1.", path));
+        }, Qt::QueuedConnection);
+    });
+    connect(t, &QThread::finished, t, &QObject::deleteLater);
+    t->start(QThread::LowPriority);
 }

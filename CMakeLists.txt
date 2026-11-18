@@ -1,5 +1,7 @@
 cmake_minimum_required(VERSION 3.20)
-project(procforge VERSION 0.4.0 LANGUAGES CXX)
+project(procforge VERSION 0.5.0 LANGUAGES CXX)
+
+option(PROCFORGE_BUILD_TESTS "Compila testes e apps falsos (ctest)" ON)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -12,6 +14,10 @@ if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE RelWithDebInfo)
 endif()
 
+# Versão única (GUI, helper e testes) vinda do project().
+add_compile_definitions(PROCFORGE_VERSION="${PROJECT_VERSION}")
+add_compile_options(-Wall -Wextra)
+
 find_package(Qt6 6.6 REQUIRED COMPONENTS Widgets DBus Network)
 # KF6 no Fedora vem dividido (sem umbrella KF6Config.cmake): procura por componente.
 find_package(KF6CoreAddons REQUIRED)
@@ -20,9 +26,9 @@ find_package(KF6WidgetsAddons REQUIRED)
 find_package(Threads REQUIRED)   # std::thread no ThreadController
 
 ### GUI sem privilégio -------------------------------------------------------
-add_executable(procforge
-    resources.qrc
-    src/main.cpp
+# Todo o código da GUI vira uma biblioteca estática: o executável e os testes
+# (GUI offscreen, modelo, ações) linkam a mesma coisa.
+add_library(procforge_gui STATIC
     src/MainWindow.cpp
     src/HelperClient.cpp
     src/core/ProcInfo.cpp
@@ -47,11 +53,14 @@ add_executable(procforge
     src/panels/ScannerWindow.cpp
     src/panels/SystemTabs.cpp
     src/panels/ProcessProperties.cpp
+    src/panels/SysInfoWindow.cpp
+    src/panels/FindHandlesDialog.cpp
+    src/panels/UpdateDialog.cpp
 )
 
-target_include_directories(procforge PRIVATE ${CMAKE_SOURCE_DIR}/src)
+target_include_directories(procforge_gui PUBLIC ${CMAKE_SOURCE_DIR}/src)
 
-target_link_libraries(procforge PRIVATE
+target_link_libraries(procforge_gui PUBLIC
     Qt6::Widgets
     Qt6::DBus
     Qt6::Network
@@ -62,7 +71,11 @@ target_link_libraries(procforge PRIVATE
     Threads::Threads
 )
 
+add_executable(procforge resources.qrc src/main.cpp)
+target_link_libraries(procforge PRIVATE procforge_gui)
+
 install(TARGETS procforge RUNTIME DESTINATION bin)
+install(PROGRAMS scripts/procforge-update DESTINATION bin)
 
 ### Helper privilegiado (D-Bus, sem Qt GUI, sem KF6) -------------------------
 add_executable(procforged
@@ -132,6 +145,7 @@ else()
     message(STATUS "procforge: sem cargo — helper usa o núcleo de memória em C++")
 endif()
 
+if(PROCFORGE_BUILD_TESTS)
 ### Self-test do núcleo de memória (scan/refine/escrita) -------------------
 add_executable(procforge_memtest
     tests/scanner_selftest.cpp
@@ -158,3 +172,7 @@ add_executable(procforge_tsuspend
 )
 target_include_directories(procforge_tsuspend PRIVATE ${CMAKE_SOURCE_DIR}/src)
 target_link_libraries(procforge_tsuspend PRIVATE Qt6::Core Threads::Threads)
+
+enable_testing()
+add_subdirectory(tests)
+endif()

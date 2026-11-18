@@ -9,15 +9,31 @@
 #include <QSettings>
 #include <QTimer>
 #include <KLocalizedString>
+#include <cstdio>
 #include <cstring>
 #include <unistd.h>
 
 int main(int argc, char **argv)
 {
+    // Opções de linha de comando tratadas antes de criar a GUI (funcionam sem display).
+    for (int i = 1; i < argc; ++i) {
+        if (!std::strcmp(argv[i], "--version") || !std::strcmp(argv[i], "-v")) {
+            std::printf("procforge %s\n", PROCFORGE_VERSION);
+            return 0;
+        }
+        if (!std::strcmp(argv[i], "--help") || !std::strcmp(argv[i], "-h")) {
+            std::printf("Uso: procforge [--tray] [--version] [--help]\n"
+                        "  --tray      inicia minimizado na bandeja\n"
+                        "  --version   mostra a versão e sai\n"
+                        "Atualizar: procforge-update (ou Ajuda > Verificar atualizações)\n");
+            return 0;
+        }
+    }
+
     QApplication app(argc, argv);
     QApplication::setApplicationName(QStringLiteral("procforge"));
     QApplication::setApplicationDisplayName(QStringLiteral("ProcForge"));
-    QApplication::setApplicationVersion(QStringLiteral("0.4.0"));
+    QApplication::setApplicationVersion(QStringLiteral(PROCFORGE_VERSION));
     QApplication::setDesktopFileName(QStringLiteral("org.procforge.ProcForge"));
 
     QApplication::setOrganizationName(QStringLiteral("ProcForge"));

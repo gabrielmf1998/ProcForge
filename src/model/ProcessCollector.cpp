@@ -7,10 +7,6 @@
 ProcessCollector::ProcessCollector(QObject *parent)
     : QObject(parent)
 {
-    m_ncpu  = static_cast<double>(procfs::onlineCpus());
-    m_ticks = static_cast<double>(procfs::clockTicksPerSec());
-    if (m_ncpu  < 1.0) m_ncpu  = 1.0;
-    if (m_ticks < 1.0) m_ticks = 100.0;
 }
 
 void ProcessCollector::start(int intervalMs)
@@ -38,8 +34,11 @@ void ProcessCollector::setInterval(int intervalMs)
 
 void ProcessCollector::scanOnce()
 {
-    const quint64 total  = procfs::totalCpuTicks();
+    const QList<procfs::CpuTimes> cpus = procfs::cpuTimes();
+    const quint64 total  = cpus.isEmpty() ? 0 : cpus.first().total;
+    const quint64 idle   = cpus.isEmpty() ? 0 : cpus.first().idle;
     const quint64 dTotal = (m_prevTotal && total > m_prevTotal) ? (total - m_prevTotal) : 0;
+    const quint64 dIdle  = (m_prevIdle && idle >= m_prevIdle) ? (idle - m_prevIdle) : 0;
 
     const qint64  nowMs   = QDateTime::currentMSecsSinceEpoch();
     const double  dtSec   = (m_prevMs && nowMs > m_prevMs) ? (nowMs - m_prevMs) / 1000.0 : 0.0;
@@ -68,6 +67,9 @@ void ProcessCollector::scanOnce()
         pi.vsizeBytes = st.vsizeBytes;
         pi.threads    = st.threads;
         pi.starttime  = st.starttime;
+        pi.nice       = st.nice;
+        pi.priority   = st.priority;
+        pi.cpuTicks   = st.utime + st.stime;
 
         // Estáticos: só releem se pid novo ou reusado (starttime mudou).
         auto cit = m_cache.constFind(pid);
@@ -91,19 +93,24 @@ void ProcessCollector::scanOnce()
 
         // CPU em % do total (0..100, como o Process Hacker).
         const quint64 procTime = st.utime + st.stime;
-        quint64 ioBytes = 0;
-        const bool hasIo = procfs::ioBytesOf(pid, &ioBytes);
+        quint64 ioRead = 0, ioWrite = 0;
+        const bool hasIo = procfs::ioBytesOf(pid, &ioRead, &ioWrite);
 
         auto pit = m_prev.constFind(pid);
         if (pit != m_prev.constEnd() && pit->starttime == st.starttime) {
             if (dTotal > 0) {
                 const quint64 dProc = (procTime > pit->procTime) ? (procTime - pit->procTime) : 0;
-                pi.cpuPercent = 100.0 * static_cast<double>(dProc) / static_cast<double>(dTotal);
+                pi.cpuPercent = qMin(100.0, 100.0 * static_cast<double>(dProc) / static_cast<double>(dTotal));
             }
-            if (hasIo && pit->hasIo && dtSec > 0.0 && ioBytes >= pit->io)
-                pi.ioRate = static_cast<double>(ioBytes - pit->io) / dtSec;
+            if (hasIo && pit->hasIo && dtSec > 0.0) {
+                if (ioRead >= pit->ioRead)
+                    pi.ioReadRate = static_cast<double>(ioRead - pit->ioRead) / dtSec;
+                if (ioWrite >= pit->ioWrite)
+                    pi.ioWriteRate = static_cast<double>(ioWrite - pit->ioWrite) / dtSec;
+                pi.ioRate = pi.ioReadRate + pi.ioWriteRate;
+            }
         }
-        newPrev.insert(pid, Prev{st.starttime, procTime, ioBytes, hasIo});
+        newPrev.insert(pid, Prev{st.starttime, procTime, ioRead, ioWrite, hasIo});
 
         out.append(pi);
     }
@@ -111,7 +118,11 @@ void ProcessCollector::scanOnce()
     m_prev      = std::move(newPrev);
     m_cache     = std::move(newCache);
     m_prevTotal = total;
+    m_prevIdle  = idle;
     m_prevMs    = nowMs;
 
+    // CPU total antes do snapshot: quem trata o snapshot (status, bandeja) já vê o valor deste tick.
+    if (dTotal > 0)
+        Q_EMIT cpuUsage(qBound(0.0, 100.0 * double(dTotal - qMin(dIdle, dTotal)) / double(dTotal), 100.0));
     Q_EMIT snapshotReady(out);
 }

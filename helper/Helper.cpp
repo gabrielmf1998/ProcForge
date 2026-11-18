@@ -263,7 +263,7 @@ bool Helper::hasSubscriber() const { return !m_subscribers.isEmpty(); }
 QString Helper::Ping()
 {
     Q_EMIT activity();
-    return QStringLiteral("procforged 0.4.0");
+    return QStringLiteral("procforged " PROCFORGE_VERSION);
 }
 
 void Helper::audit(const QString &action, uint pid, const QString &result)

@@ -2,7 +2,39 @@
 
 Fases 0-4 completas. Clone funcional do Process Hacker, muito além do básico.
 
-## Feito nesta rodada (0.4.0) — correção de bugs
+## Feito nesta rodada (0.5.0) — funções novas, atualizador e testes
+Detalhes de usuário em `docs/releases/v0.5.0.md`; processo de release em
+`docs/RELEASING.md`. Pontos técnicos:
+- **Atualizador** `scripts/procforge-update` (bash, instalado em `bin/`). Detecta
+  appimage/pacman/rpm/deb/source, exige `SHA256SUMS` na release, usa pkexec só
+  nos passos de root. A GUI (`panels/UpdateDialog`) chama com
+  `--yes --version V --binary <exe> --current <ver>` e espera a linha
+  `PROCFORGE-UPDATE-OK`. `UpdateManager` faz a checagem automática (8 s após
+  abrir, depois a cada 12 h, QSettings `autoUpdateCheck`).
+- **Versão única** vinda do `project()` do CMake (`PROCFORGE_VERSION`), usada no
+  `--version`, `applicationVersion` e no `Ping` do helper.
+- **Helper sai sozinho** quando `/proc/self/exe` vira `(deleted)` (binário
+  trocado por update); a GUI vê o nome sumir (`QDBusServiceWatcher`) e reassina
+  os eventos cn_proc 1,5 s depois.
+- **Modelo**: processos que saem ficam `diedMs` por `kFlashMs` (vermelho) e são
+  purgados por timer; PID reusado (starttime diferente) troca o nó; só linhas
+  que mudaram emitem `dataChanged`. CPU total vem de `/proc/stat`.
+- **Abas de sistema** herdam `LivePanel` (timer só com a aba visível, QProcess
+  assíncrono); nada mais usa `waitForFinished` na thread da GUI.
+- **Scanner** busca/refina numa cópia do `MemoryScanner` em `QThread` e troca no
+  fim; congelados guardam o próprio tipo.
+- **dupForeignFd** agora devolve o fd local aberto (quem chama fecha); a
+  DetailPanel usa isso para salvar cópia do arquivo.
+- **Build**: código da GUI virou a lib estática `procforge_gui` (o executável e
+  os testes linkam ela). `-Wall -Wextra` sem avisos; o CI usa `-Werror`.
+- **Testes** (`tests/`, ctest, opção `PROCFORGE_BUILD_TESTS`): `test_core`
+  (versões, procfs, modelo, filtro, UpdateChecker contra servidor falso),
+  `test_actions` (ações reais contra `fakeapp`), `test_gui` (offscreen),
+  `test_updater.sh`, `test_memory_selftest`, `test_cli_version`. O `fakeapp`
+  é sempre filho do teste porque com `ptrace_scope=1` só descendentes podem ser
+  lidos/injetados.
+
+## Rodada 0.4.0 (não publicada, entrou na 0.5.0) — correção de bugs
 - **Verificador de atualização dava falso positivo permanente.** A versão do
   app era `"0.3"` e as tags são `v0.3.0`; `QVersionNumber(0,3,0) > (0,3)` é
   verdadeiro, então o app SEMPRE notificava "atualização disponível 0.3.0"

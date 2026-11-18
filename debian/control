@@ -20,7 +20,8 @@ Architecture: amd64
 Depends: ${shlibs:Depends},
          ${misc:Depends},
          policykit-1 | polkitd,
-         hicolor-icon-theme
+         hicolor-icon-theme,
+         curl
 Recommends: bpftrace,
             iproute2,
             util-linux,

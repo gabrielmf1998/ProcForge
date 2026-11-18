@@ -1,3 +1,18 @@
+procforge (0.5.0-1) unstable; urgency=medium
+
+  * Atualizacao dentro do app (Ajuda > Verificar atualizacoes) com notas da
+    versao e instalacao em um clique via procforge-update, conferindo SHA256.
+  * Janela Informacao do sistema com graficos de CPU, RAM, disco e rede.
+  * Localizar handles ou DLLs em todos os processos, em segundo plano.
+  * Colunas opcionais, escolha de colunas, menu de prioridade, copiar, salvar
+    lista, atalhos de teclado e confirmacao antes de terminar processos.
+  * Servicos do usuario, filtros e acoes assincronas nas abas Servicos e Rede.
+  * Correcoes: filtro por usuario, CPU total, ordenacao do disco, abas ocultas
+    gastando CPU, reuso de PID e helper antigo apos atualizacao.
+  * Testes automatizados com apps falsos e CI em Arch, Fedora e Debian.
+
+ -- Gabriel (kxinha) <gabriel17166@gmail.com>  Wed, 18 Nov 2026 14:00:00 -0300
+
 procforge (0.4.0-1) unstable; urgency=medium
 
   * Corrigido: o verificador de atualizacoes acusava "versao nova disponivel"
@@ -12,7 +27,7 @@ procforge (0.4.0-1) unstable; urgency=medium
     helper encerra a arvore toda com um unico dialogo do polkit.
   * Limpeza: removido o uso de API deprecada no filtro de busca.
 
- -- Gabriel (kxinha) <gabriel17166@gmail.com>  Tue, 18 Nov 2026 04:00:00 -0300
+ -- Gabriel (kxinha) <gabriel17166@gmail.com>  Wed, 18 Nov 2026 04:00:00 -0300
 
 procforge (0.3.0-1) unstable; urgency=medium
 

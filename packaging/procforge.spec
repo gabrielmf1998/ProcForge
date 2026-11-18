@@ -1,5 +1,5 @@
 Name:           procforge
-Version:        0.4.0
+Version:        0.5.0
 Release:        1%{?dist}
 Summary:        Clone do Process Hacker para Linux — manipulação ativa de processos, memória e sistema
 
@@ -23,6 +23,7 @@ Requires:       kf6-ki18n
 Requires:       kf6-kwidgetsaddons
 Requires:       polkit
 Requires:       hicolor-icon-theme
+Requires:       curl
 # Recomendados para funcionalidades específicas (eBPF, rede, namespaces, token, janelas):
 Recommends:     bpftrace
 Recommends:     iproute
@@ -47,7 +48,7 @@ com polkit por AÇÃO e capabilities mínimas.
 %autosetup -n %{name}-%{version}
 
 %build
-%cmake -G Ninja
+%cmake -G Ninja -DPROCFORGE_BUILD_TESTS=OFF
 %cmake_build
 
 %install
@@ -72,6 +73,7 @@ gtk-update-icon-cache %{_datadir}/icons/hicolor &>/dev/null || :
 %license LICENSE
 %doc README.md docs/STATUS.md
 %{_bindir}/procforge
+%{_bindir}/procforge-update
 %{_libexecdir}/procforged
 %{_datadir}/polkit-1/actions/org.procforge.helper.policy
 %{_datadir}/dbus-1/system.d/org.procforge.Helper1.conf
@@ -82,7 +84,25 @@ gtk-update-icon-cache %{_datadir}/icons/hicolor &>/dev/null || :
 %{_datadir}/locale/en/LC_MESSAGES/procforge.mo
 
 %changelog
-* Tue Nov 18 2026 Gabriel (kxinha) <gabriel17166@gmail.com> - 0.4.0-1
+* Wed Nov 18 2026 Gabriel (kxinha) <gabriel17166@gmail.com> - 0.5.0-1
+- Atualização dentro do app: Ajuda > Verificar atualizações mostra as notas da
+  versão e instala com um clique (procforge-update), conferindo SHA256SUMS.
+- Janela Informação do sistema com gráficos de CPU (total e por núcleo), RAM,
+  swap, disco e rede.
+- Localizar handles ou DLLs em todos os processos, em segundo plano.
+- Colunas opcionais (PID pai, threads, estado, nice, memória virtual, tempo de
+  CPU, início, leitura e escrita de disco) e escolha de colunas no cabeçalho.
+- Processos encerrados ficam em vermelho por 1,5 s; menu de prioridade,
+  ir para o pai, abrir local do arquivo, copiar, salvar lista em TXT/CSV,
+  atalhos de teclado e confirmação antes de terminar.
+- Serviços do usuário, filtros e ações assíncronas nas abas Serviços e Rede.
+- Scanner de memória busca em segundo plano; Propriedades detecta processo
+  encerrado; salvar cópia de arquivo aberto (inclusive apagado).
+- Correções: filtro por usuário, CPU total, ordenação numérica do disco,
+  abas ocultas consumindo CPU, reuso de PID e helper antigo após atualização.
+- Testes automatizados com apps falsos e CI em Arch, Fedora e Debian.
+
+* Wed Nov 18 2026 Gabriel (kxinha) <gabriel17166@gmail.com> - 0.4.0-1
 - Corrigido: o verificador de atualizações acusava "versão nova" para sempre,
   porque a versão do app ("0.3") era comparada com as tags "v0.3.0" e 0.3.0 >
   0.3. A versão agora tem três segmentos (0.4.0).

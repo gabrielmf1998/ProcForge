@@ -1,4 +1,6 @@
 #include "FdInjector.h"
+
+#include <fcntl.h>
 #include "core/Syscalls.h"
 
 #include <KLocalizedString>
@@ -116,10 +118,9 @@ Result dupForeignFd(int pid, int fd)
     ::close(pfd);
     if (local < 0)
         return {false, i18n("pidfd_getfd falhou: %1", err(e)), 0};
-    // Duplicado com sucesso; fechamos a cópia local (ainda sem consumidor).
-    long dup = local;
-    ::close(local);
-    return {true, {}, dup};
+    // Garante CLOEXEC (pidfd_getfd já marca, mas não custa) e entrega ao chamador.
+    ::fcntl(local, F_SETFD, FD_CLOEXEC);
+    return {true, {}, long(local)};
 }
 
 } // namespace inject

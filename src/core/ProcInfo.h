@@ -18,6 +18,11 @@ struct ProcInfo {
     quint64  starttime  = 0;       // ticks desde o boot (identidade anti-reuso de PID)
     double   cpuPercent = 0.0;     // % do total de CPU (0..100, como o Process Hacker)
     double   ioRate     = 0.0;     // bytes/s de I/O (read+write), delta de /proc/PID/io
+    double   ioReadRate = 0.0;     // bytes/s lidos do disco
+    double   ioWriteRate= 0.0;     // bytes/s escritos no disco
+    quint64  cpuTicks   = 0;       // utime+stime acumulados (tempo de CPU total)
+    int      nice       = 0;
+    int      priority   = 0;
     bool     service    = false;   // processo de um .service do systemd (cor verde)
     bool     kernel     = false;   // kernel thread (sem cmdline)
     QString  cmdline;              // linha de comando completa (args separados por espaço)

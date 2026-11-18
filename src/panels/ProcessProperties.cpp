@@ -25,6 +25,8 @@
 #include <QTabWidget>
 #include <QTableWidget>
 #include <QTimer>
+#include <KGuiItem>
+#include <algorithm>
 #include <QVBoxLayout>
 
 #include <unistd.h>
@@ -80,6 +82,16 @@ void addRow(QFormLayout *form, const QString &k, const QString &v)
     form->addRow(new QLabel(QStringLiteral("<b>%1</b>").arg(k)), val);
 }
 
+// Item que ordena por um número guardado em UserRole (tamanho, endereço).
+class NumSortItem : public QTableWidgetItem {
+public:
+    NumSortItem(const QString &text, double key) : QTableWidgetItem(text) { setData(Qt::UserRole, key); }
+    bool operator<(const QTableWidgetItem &o) const override
+    {
+        return data(Qt::UserRole).toDouble() < o.data(Qt::UserRole).toDouble();
+    }
+};
+
 } // namespace
 
 ProcessProperties::ProcessProperties(int pid, quint64 starttime, const QString &name, QWidget *parent)
@@ -103,10 +115,10 @@ ProcessProperties::ProcessProperties(int pid, quint64 starttime, const QString &
     tabs->addTab(buildMemory(),      i18n("Memória"));
     v->addWidget(tabs);
 
-    auto *timer = new QTimer(this);
-    timer->setInterval(1000);
-    connect(timer, &QTimer::timeout, this, &ProcessProperties::refreshLive);
-    timer->start();
+    m_timer = new QTimer(this);
+    m_timer->setInterval(1000);
+    connect(m_timer, &QTimer::timeout, this, &ProcessProperties::refreshLive);
+    m_timer->start();
     refreshLive();
 }
 
@@ -278,6 +290,14 @@ QWidget *ProcessProperties::buildHandles()
         const int r = m_handles->currentRow();
         if (r < 0 || !m_handles->item(r, 0)) return;
         const int fd = m_handles->item(r, 0)->text().toInt();
+        if (!stillSameProcess()) { KMessageBox::error(this, i18n("O processo já encerrou.")); return; }
+        const QString target = m_handles->item(r, 2) ? m_handles->item(r, 2)->text() : QString();
+        if (KMessageBox::warningContinueCancel(this,
+                i18n("Fechar o descritor %1 (%2) dentro de %3? O programa pode falhar ao usar esse arquivo depois.",
+                     fd, target, m_name),
+                i18n("Fechar descritor"), KGuiItem(i18n("Fechar"), QStringLiteral("window-close")))
+            != KMessageBox::Continue)
+            return;
         const inject::Result res = inject::closeForeignFd(m_pid, fd);
         if (!res.ok) KMessageBox::error(this, res.error);
         reloadHandles();
@@ -330,18 +350,35 @@ void ProcessProperties::reloadMemory()
     int row = 0;
     for (const procfs::MapEntry &m : procfs::listMaps(m_pid)) {
         m_maps->insertRow(row);
-        m_maps->setItem(row, 0, new QTableWidgetItem(QStringLiteral("0x%1").arg(m.start, 0, 16)));
+        m_maps->setItem(row, 0, new NumSortItem(QStringLiteral("0x%1").arg(m.start, 0, 16), double(m.start)));
         m_maps->setItem(row, 1, new QTableWidgetItem(m.perms));
-        m_maps->setItem(row, 2, new QTableWidgetItem(fmt.formatByteSize(m.end - m.start, 1)));
+        m_maps->setItem(row, 2, new NumSortItem(fmt.formatByteSize(m.end - m.start, 1), double(m.end - m.start)));
         m_maps->setItem(row, 3, new QTableWidgetItem(m.path.isEmpty() ? QStringLiteral("[anônimo]") : m.path));
         ++row;
     }
     m_maps->setSortingEnabled(true);
 }
 
+bool ProcessProperties::stillSameProcess() const
+{
+    procfs::StatFields st;
+    return procfs::readStat(m_pid, st) && (m_starttime == 0 || st.starttime == m_starttime);
+}
+
 void ProcessProperties::refreshLive()
 {
     static const KFormat fmt;
+    if (m_ended)
+        return;
+    if (!stillSameProcess()) {
+        // Processo saiu (ou o PID foi reusado): congela a janela com os últimos dados.
+        m_ended = true;
+        m_timer->stop();
+        setWindowTitle(i18n("Propriedades — %1 (PID %2, encerrado)", m_name, m_pid));
+        m_header->setText(i18n("<b>%1</b> (PID %2) <span style='color:#d33'>encerrou; dados abaixo são os últimos lidos</span>",
+                               m_name, m_pid));
+        return;
+    }
     const auto s = statusMap(m_pid);
     procfs::StatFields st;
     const bool alive = procfs::readStat(m_pid, st);
@@ -383,8 +420,9 @@ void ProcessProperties::refreshLive()
     // Threads ao vivo (preserva seleção por TID).
     const int keep = (m_threads->currentRow() >= 0 && m_threads->item(m_threads->currentRow(), 0))
                          ? m_threads->item(m_threads->currentRow(), 0)->text().toInt() : 0;
-    const QStringList tids = QDir(QStringLiteral("/proc/%1/task").arg(m_pid))
-                                 .entryList(QDir::Dirs | QDir::NoDotAndDotDot, QDir::Name);
+    QStringList tids = QDir(QStringLiteral("/proc/%1/task").arg(m_pid))
+                           .entryList(QDir::Dirs | QDir::NoDotAndDotDot);
+    std::sort(tids.begin(), tids.end(), [](const QString &a, const QString &b) { return a.toInt() < b.toInt(); });
     m_threads->setRowCount(tids.size());
     int r = 0, keepRow = -1;
     for (const QString &t : tids) {

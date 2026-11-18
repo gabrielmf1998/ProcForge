@@ -3,681 +3,6 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Language: en\n"
 
-msgid "O processo %1 não existe mais."
-msgstr "Process %1 no longer exists."
-
-msgid "O PID %1 foi reutilizado por outro processo."
-msgstr "PID %1 was reused by another process."
-
-msgid "Falha ao enviar sinal: %1"
-msgstr "Failed to send signal: %1"
-
-msgid "Recusado: não vou matar o PID %1."
-msgstr "Refused: I won't kill PID %1."
-
-msgid "%1 processo(s) da árvore encerrado(s)."
-msgstr "%1 process(es) of the tree terminated."
-
-msgid "Falha ao ajustar prioridade (nice %1): %2"
-msgstr "Failed to set priority (nice %1): %2"
-
-msgid "Selecione ao menos uma CPU."
-msgstr "Select at least one CPU."
-
-msgid "Falha ao definir afinidade: %1"
-msgstr "Failed to set affinity: %1"
-
-msgid "Falha ao definir escalonador: %1"
-msgstr "Failed to set scheduler: %1"
-
-msgid "Falha ao definir prioridade de I/O: %1"
-msgstr "Failed to set I/O priority: %1"
-
-msgid "Falha ao definir limite: %1"
-msgstr "Failed to set limit: %1"
-
-msgid "Executando"
-msgstr "Running"
-
-msgid "Dormindo"
-msgstr "Sleeping"
-
-msgid "Espera ininterrupta (D)"
-msgstr "Uninterruptible sleep (D)"
-
-msgid "Zumbi"
-msgstr "Zombie"
-
-msgid "Parado (stopped)"
-msgstr "Stopped"
-
-msgid "Rastreado (traced)"
-msgstr "Traced"
-
-msgid "Morto"
-msgstr "Dead"
-
-msgid "Ocioso (kernel)"
-msgstr "Idle (kernel)"
-
-msgid "Atualização disponível"
-msgstr "Update available"
-
-msgid "ProcForge %1 disponível — clique para abrir."
-msgstr "ProcForge %1 available — click to open."
-
-msgid "Você já está na versão mais recente."
-msgstr "You're already on the latest version."
-
-msgid "Falha ao verificar atualizações: %1"
-msgstr "Failed to check for updates: %1"
-
-msgid "Abrir ProcForge"
-msgstr "Open ProcForge"
-
-msgid "Verificar atualizações"
-msgstr "Check for updates"
-
-msgid "Iniciar com o sistema"
-msgstr "Start with the system"
-
-msgid "Sair"
-msgstr "Quit"
-
-msgid "Alvo inválido."
-msgstr "Invalid target."
-
-msgid "PTRACE_SEIZE falhou: %1"
-msgstr "PTRACE_SEIZE failed: %1"
-
-msgid "PTRACE_INTERRUPT falhou: %1"
-msgstr "PTRACE_INTERRUPT failed: %1"
-
-msgid "O alvo não parou como esperado."
-msgstr "The target did not stop as expected."
-
-msgid "GETREGSET falhou: %1"
-msgstr "GETREGSET failed: %1"
-
-msgid "PEEKTEXT falhou: %1"
-msgstr "PEEKTEXT failed: %1"
-
-msgid "POKETEXT falhou: %1"
-msgstr "POKETEXT failed: %1"
-
-msgid "SETREGSET falhou: %1"
-msgstr "SETREGSET failed: %1"
-
-msgid "SINGLESTEP falhou: %1"
-msgstr "SINGLESTEP failed: %1"
-
-msgid "close() no alvo falhou: %1"
-msgstr "close() in target failed: %1"
-
-msgid "pidfd_open falhou: %1"
-msgstr "pidfd_open failed: %1"
-
-msgid "pidfd_getfd falhou: %1"
-msgstr "pidfd_getfd failed: %1"
-
-msgid "Nome"
-msgstr "Name"
-
-msgid "PID"
-msgstr "PID"
-
-msgid "CPU"
-msgstr "CPU"
-
-msgid "I/O total"
-msgstr "I/O total"
-
-msgid "Bytes privados"
-msgstr "Private bytes"
-
-msgid "Usuário"
-msgstr "User"
-
-msgid "Descrição"
-msgstr "Description"
-
-msgid "FD"
-msgstr "FD"
-
-msgid "Tipo"
-msgstr "Type"
-
-msgid "Alvo"
-msgstr "Target"
-
-msgid "Flags"
-msgstr "Flags"
-
-msgid "Base"
-msgstr "Base"
-
-msgid "Perms"
-msgstr "Perms"
-
-msgid "Offset"
-msgstr "Offset"
-
-msgid "Tamanho"
-msgstr "Size"
-
-msgid "Arquivo mapeado"
-msgstr "Mapped file"
-
-msgid "Nenhum processo selecionado"
-msgstr "No process selected"
-
-msgid "Atualizar"
-msgstr "Refresh"
-
-msgid "Fechar no dono"
-msgstr "Close in owner"
-
-msgid "Injeta close() no processo alvo (libera a trava)."
-msgstr "Injects close() into the target process (releases the lock)."
-
-msgid "Duplicar p/ mim"
-msgstr "Duplicate to me"
-
-msgid "Copia o fd para este processo via pidfd_getfd."
-msgstr "Copies the fd into this process via pidfd_getfd."
-
-msgid "Descritores"
-msgstr "Descriptors"
-
-msgid "Só bibliotecas (.so)"
-msgstr "Libraries only (.so)"
-
-msgid "Bibliotecas / Mapas"
-msgstr "Libraries / Maps"
-
-msgid "%1 (PID %2)"
-msgstr "%1 (PID %2)"
-
-msgid "Selecione um descritor primeiro."
-msgstr "Select a descriptor first."
-
-msgid "Injetar close(%1) no processo %2 (%3)?\n\nAlvo: %4\n\nIsto libera a trava mantida por este fd (lockfile, socket do singleton, eventfd) sem matar o processo. A operação usa ptrace."
-msgstr "Inject close(%1) into process %2 (%3)?\n\nTarget: %4\n\nThis releases the lock held by this fd (lockfile, singleton socket, eventfd) without killing the process. The operation uses ptrace."
-
-msgid "Fechar descritor alheio"
-msgstr "Close another process's descriptor"
-
-msgid "close(%1) executado no alvo (retorno %2)."
-msgstr "close(%1) executed in target (return %2)."
-
-msgid "fd %1 duplicado para nós via pidfd_getfd (fd local %2). O fd do dono continua aberto."
-msgstr "fd %1 duplicated to us via pidfd_getfd (local fd %2). The owner's fd stays open."
-
-msgid "Propriedades — %1 (PID %2)"
-msgstr "Properties — %1 (PID %2)"
-
-msgid "<b>%1</b> (PID %2)"
-msgstr "<b>%1</b> (PID %2)"
-
-msgid "Geral"
-msgstr "General"
-
-msgid "Estatísticas"
-msgstr "Statistics"
-
-msgid "Threads"
-msgstr "Threads"
-
-msgid "Token"
-msgstr "Token"
-
-msgid "Ambiente"
-msgstr "Environment"
-
-msgid "Handles"
-msgstr "Handles"
-
-msgid "Memória"
-msgstr "Memory"
-
-msgid "PID pai"
-msgstr "Parent PID"
-
-msgid "Estado"
-msgstr "State"
-
-msgid "Iniciado"
-msgstr "Started"
-
-msgid "Executável"
-msgstr "Executable"
-
-msgid "Diretório de trabalho"
-msgstr "Working directory"
-
-msgid "Raiz (chroot)"
-msgstr "Root (chroot)"
-
-msgid "Linha de comando"
-msgstr "Command line"
-
-msgid "Nice"
-msgstr "Nice"
-
-msgid "Afinidade de CPU"
-msgstr "CPU affinity"
-
-msgid "Métrica"
-msgstr "Metric"
-
-msgid "Valor"
-msgstr "Value"
-
-msgid "TID"
-msgstr "TID"
-
-msgid "Suspender thread"
-msgstr "Suspend thread"
-
-msgid "Retomar thread"
-msgstr "Resume thread"
-
-msgid "real %1 · efetivo %2 · salvo %3 · fs %4"
-msgstr "real %1 · effective %2 · saved %3 · fs %4"
-
-msgid "UID"
-msgstr "UID"
-
-msgid "GID"
-msgstr "GID"
-
-msgid "Grupos"
-msgstr "Groups"
-
-msgid "Capabilities efetivas"
-msgstr "Effective capabilities"
-
-msgid "Capabilities permitidas"
-msgstr "Permitted capabilities"
-
-msgid "Capabilities herdáveis"
-msgstr "Inheritable capabilities"
-
-msgid "Capabilities do bounding set"
-msgstr "Bounding set capabilities"
-
-msgid "Capabilities ambientais"
-msgstr "Ambient capabilities"
-
-msgid "Seccomp"
-msgstr "Seccomp"
-
-msgid "filtro (BPF)"
-msgstr "filter (BPF)"
-
-msgid "estrito"
-msgstr "strict"
-
-msgid "desativado"
-msgstr "disabled"
-
-msgid "NoNewPrivs"
-msgstr "NoNewPrivs"
-
-msgid "sim"
-msgstr "yes"
-
-msgid "não"
-msgstr "no"
-
-msgid "Contexto de segurança"
-msgstr "Security context"
-
-msgid "Variável"
-msgstr "Variable"
-
-msgid "Sem permissão para ler o ambiente (uid diferente)."
-msgstr "No permission to read the environment (different uid)."
-
-msgid "Arquivo"
-msgstr "File"
-
-msgid "Tempo de CPU (usuário)"
-msgstr "CPU time (user)"
-
-msgid "Tempo de CPU (sistema)"
-msgstr "CPU time (system)"
-
-msgid "Memória (RSS)"
-msgstr "Memory (RSS)"
-
-msgid "Memória virtual"
-msgstr "Virtual memory"
-
-msgid "Dados/heap"
-msgstr "Data/heap"
-
-msgid "Pilha"
-msgstr "Stack"
-
-msgid "Swap"
-msgstr "Swap"
-
-msgid "Disco lido"
-msgstr "Disk read"
-
-msgid "Disco escrito"
-msgstr "Disk written"
-
-msgid "Trocas de contexto (voluntárias)"
-msgstr "Context switches (voluntary)"
-
-msgid "Trocas de contexto (involuntárias)"
-msgstr "Context switches (involuntary)"
-
-msgid "  [suspensa]"
-msgstr "  [suspended]"
-
-msgid "Scanner de memória — %1 (PID %2)"
-msgstr "Memory scanner — %1 (PID %2)"
-
-msgid "Tipo:"
-msgstr "Type:"
-
-msgid "Valor:"
-msgstr "Value:"
-
-msgid "Primeira busca"
-msgstr "First scan"
-
-msgid "= valor"
-msgstr "= value"
-
-msgid "mudou"
-msgstr "changed"
-
-msgid "não mudou"
-msgstr "unchanged"
-
-msgid "aumentou"
-msgstr "increased"
-
-msgid "diminuiu"
-msgstr "decreased"
-
-msgid "> valor"
-msgstr "> value"
-
-msgid "< valor"
-msgstr "< value"
-
-msgid "Refinar"
-msgstr "Refine"
-
-msgid "Nova busca"
-msgstr "New scan"
-
-msgid "0 resultados"
-msgstr "0 results"
-
-msgid "Endereço"
-msgstr "Address"
-
-msgid "Editar valor..."
-msgstr "Edit value..."
-
-msgid "Congelar →"
-msgstr "Freeze →"
-
-msgid "Congelados (reescritos em loop):"
-msgstr "Frozen (rewritten in a loop):"
-
-msgid "Valor travado"
-msgstr "Locked value"
-
-msgid "Descongelar"
-msgstr "Unfreeze"
-
-msgid "Scanner"
-msgstr "Scanner"
-
-msgid "Ler memória"
-msgstr "Read memory"
-
-msgid "Endereço (hex):"
-msgstr "Address (hex):"
-
-msgid "Bytes:"
-msgstr "Bytes:"
-
-msgid "Ler"
-msgstr "Read"
-
-msgid "Escrever bytes"
-msgstr "Write bytes"
-
-msgid "Bytes (hex):"
-msgstr "Bytes (hex):"
-
-msgid "Gravar"
-msgstr "Write"
-
-msgid "Manipular páginas (mmap / mprotect / munmap)"
-msgstr "Manipulate pages (mmap / mprotect / munmap)"
-
-msgid "Tamanho (bytes):"
-msgstr "Size (bytes):"
-
-msgid "Proteção:"
-msgstr "Protection:"
-
-msgid "Alocar (mmap)"
-msgstr "Allocate (mmap)"
-
-msgid "Proteger (mprotect)"
-msgstr "Protect (mprotect)"
-
-msgid "Liberar (munmap)"
-msgstr "Free (munmap)"
-
-msgid "Memória (hex)"
-msgstr "Memory (hex)"
-
-msgid "Digite um valor para buscar."
-msgstr "Type a value to search for."
-
-msgid "Sem permissão para ler a memória deste processo (uid diferente). A busca direta funciona para processos do seu usuário; varredura cross-uid pelo helper é um passo futuro."
-msgstr "No permission to read this process's memory (different uid). Direct scanning works for your own processes; cross-uid scanning via the helper is a future step."
-
-msgid "Faça a primeira busca antes de refinar."
-msgstr "Do the first scan before refining."
-
-msgid "%1 resultados (mostrando %2)"
-msgstr "%1 results (showing %2)"
-
-msgid "%1+ resultados (truncado — refine mais)"
-msgstr "%1+ results (truncated — refine further)"
-
-msgid "%1 resultados"
-msgstr "%1 results"
-
-msgid "Selecione um resultado."
-msgstr "Select a result."
-
-msgid "Editar valor em 0x%1"
-msgstr "Edit value at 0x%1"
-
-msgid "Novo valor (%1):"
-msgstr "New value (%1):"
-
-msgid "Valor inválido para o tipo %1."
-msgstr "Invalid value for type %1."
-
-msgid "Falha ao escrever na memória (permissão?)."
-msgstr "Failed to write to memory (permission?)."
-
-msgid "Selecione um resultado para congelar."
-msgstr "Select a result to freeze."
-
-msgid "Não consegui ler o valor atual."
-msgstr "Could not read the current value."
-
-msgid "Endereço inválido."
-msgstr "Invalid address."
-
-msgid "<falha ao ler — endereço não mapeado ou sem permissão>"
-msgstr "<failed to read — address not mapped or no permission>"
-
-msgid "Bytes hex inválidos (ex.: de ad be ef)."
-msgstr "Invalid hex bytes (e.g.: de ad be ef)."
-
-msgid "Gravar %1 byte(s) em 0x%2 do processo %3?"
-msgstr "Write %1 byte(s) at 0x%2 of process %3?"
-
-msgid "Escrever na memória"
-msgstr "Write to memory"
-
-msgid "%1 byte(s) gravado(s)."
-msgstr "%1 byte(s) written."
-
-msgid "Falha ao gravar (permissão?)."
-msgstr "Failed to write (permission?)."
-
-msgid "Tamanho inválido."
-msgstr "Invalid size."
-
-msgid "erro"
-msgstr "error"
-
-msgid "mmap falhou: %1"
-msgstr "mmap failed: %1"
-
-msgid "Região alocada em %1 (%2 bytes)."
-msgstr "Region allocated at %1 (%2 bytes)."
-
-msgid "Proteção alterada em 0x%1."
-msgstr "Protection changed at 0x%1."
-
-msgid "mprotect falhou: %1"
-msgstr "mprotect failed: %1"
-
-msgid "Liberar (munmap) %1 byte(s) em 0x%2 do processo %3?\nSe a região estiver em uso, o processo pode falhar."
-msgstr "Free (munmap) %1 byte(s) at 0x%2 of process %3?\nIf the region is in use, the process may crash."
-
-msgid "Liberar memória"
-msgstr "Free memory"
-
-msgid "Região liberada."
-msgstr "Region freed."
-
-msgid "munmap falhou: %1"
-msgstr "munmap failed: %1"
-
-msgid "Unidade"
-msgstr "Unit"
-
-msgid "Carregada"
-msgstr "Loaded"
-
-msgid "Ativa"
-msgstr "Active"
-
-msgid "Sub"
-msgstr "Sub"
-
-msgid "Ativação"
-msgstr "Startup"
-
-msgid "Iniciar"
-msgstr "Start"
-
-msgid "Parar"
-msgstr "Stop"
-
-msgid "Reiniciar"
-msgstr "Restart"
-
-msgid "Recarregar"
-msgstr "Reload"
-
-msgid "Habilitar (no boot)"
-msgstr "Enable (on boot)"
-
-msgid "Desabilitar (no boot)"
-msgstr "Disable (on boot)"
-
-msgid "Mascarar"
-msgstr "Mask"
-
-msgid "Desmascarar"
-msgstr "Unmask"
-
-msgid "Status / journal..."
-msgstr "Status / journal..."
-
-msgid "Ir para o processo"
-msgstr "Go to process"
-
-msgid "Status — %1"
-msgstr "Status — %1"
-
-msgid "(sem saída)"
-msgstr "(no output)"
-
-msgid "O serviço %1 não tem processo principal em execução."
-msgstr "Service %1 has no running main process."
-
-msgid "Processos com a rede cortada"
-msgstr "Processes with network cut"
-
-msgid "Processo"
-msgstr "Process"
-
-msgid "Caminho"
-msgstr "Path"
-
-msgid "Restabelecer rede"
-msgstr "Restore network"
-
-msgid "Copiar PID"
-msgstr "Copy PID"
-
-msgid "Proto"
-msgstr "Proto"
-
-msgid "Local"
-msgstr "Local"
-
-msgid "Remoto"
-msgstr "Remote"
-
-msgid "Fechar esta conexão (ss -K)"
-msgstr "Close this connection (ss -K)"
-
-msgid "Não consegui montar o filtro da conexão."
-msgstr "Could not build the connection filter."
-
-msgid "Matar processo (SIGTERM)"
-msgstr "Kill process (SIGTERM)"
-
-msgid "Matar processo (SIGKILL)"
-msgstr "Kill process (SIGKILL)"
-
-msgid "Dispositivo"
-msgstr "Device"
-
-msgid "Leitura/s"
-msgstr "Read/s"
-
-msgid "Escrita/s"
-msgstr "Write/s"
-
-msgid "Lido (total)"
-msgstr "Read (total)"
-
-msgid "Escrito (total)"
-msgstr "Written (total)"
-
 msgid "Helper privilegiado não instalado. Rode: ./install-helper.sh"
 msgstr "Privileged helper not installed. Run: ./install-helper.sh"
 
@@ -696,6 +21,9 @@ msgstr "Network"
 msgid "Disco"
 msgstr "Disk"
 
+msgid "CPU: %1%"
+msgstr "CPU: %1%"
+
 msgid "&Hacker"
 msgstr "&Hacker"
 
@@ -711,11 +39,20 @@ msgstr "Find handles or DLLs..."
 msgid "Informação do sistema..."
 msgstr "System information..."
 
+msgid "Salvar lista de processos..."
+msgstr "Save process list..."
+
 msgid "Opções..."
 msgstr "Options..."
 
+msgid "Sair"
+msgstr "Quit"
+
 msgid "&Ver"
 msgstr "&View"
+
+msgid "Atualizar"
+msgstr "Refresh"
 
 msgid "Intervalo de atualização"
 msgstr "Update interval"
@@ -740,6 +77,9 @@ msgstr "Expand all"
 
 msgid "Recolher tudo"
 msgstr "Collapse all"
+
+msgid "Escolher colunas..."
+msgstr "Choose columns..."
 
 msgid "Tema"
 msgstr "Theme"
@@ -768,6 +108,9 @@ msgstr "The language changes when ProcForge restarts. Restart now?"
 msgid "Idioma"
 msgstr "Language"
 
+msgid "Reiniciar"
+msgstr "Restart"
+
 msgid "&Ferramentas"
 msgstr "&Tools"
 
@@ -795,6 +138,15 @@ msgstr "&Users"
 msgid "Aj&uda"
 msgstr "&Help"
 
+msgid "Verificar atualizações..."
+msgstr "Check for updates..."
+
+msgid "Página do projeto"
+msgstr "Project page"
+
+msgid "Relatar um problema"
+msgstr "Report a problem"
+
 msgid "Sobre o ProcForge"
 msgstr "About ProcForge"
 
@@ -813,23 +165,35 @@ msgstr "System information"
 msgid "Terminar"
 msgstr "Terminate"
 
-msgid "Terminar o processo selecionado (SIGTERM)"
-msgstr "Terminate the selected process (SIGTERM)"
+msgid "Terminar o processo selecionado (SIGTERM, tecla Del)"
+msgstr "Terminate the selected process (SIGTERM, Del key)"
 
-msgid "Buscar processos (Ctrl+K)"
-msgstr "Search processes (Ctrl+K)"
+msgid "Matar árvore"
+msgstr "Kill tree"
+
+msgid "Matar o processo e toda a descendência (Shift+Del)"
+msgstr "Kill the process and all its descendants (Shift+Del)"
+
+msgid "Propriedades"
+msgstr "Properties"
+
+msgid "Propriedades do processo (Enter)"
+msgstr "Process properties (Enter)"
+
+msgid "Buscar processos (Ctrl+K)  user:nome  pid:N"
+msgstr "Search processes (Ctrl+K)  user:name  pid:N"
+
+msgid "Busca por nome, linha de comando, usuário ou PID.\nuser:root mostra só os processos do root; pid:1234 acha um PID."
+msgstr "Search by name, command line, user or PID.\nuser:root shows only root processes; pid:1234 finds a PID."
 
 msgid "Processo %1 não está na lista."
 msgstr "Process %1 is not in the list."
 
-msgid "CPU: %1%"
-msgstr "CPU: %1%"
-
 msgid "Memória física: %1 (%2%)"
 msgstr "Physical memory: %1 (%2%)"
 
-msgid "Processos: %1"
-msgstr "Processes: %1"
+msgid "Processos: %1   Threads: %2"
+msgstr "Processes: %1   Threads: %2"
 
 msgid "(sem dados)"
 msgstr "(no data)"
@@ -885,26 +249,14 @@ msgstr "Could not run %1:\n%2"
 msgid "Iniciado: %1 (%2)"
 msgstr "Started: %1 (%2)"
 
-msgid "Buscar em fds e bibliotecas mapeadas (nome de arquivo, socket:[inode], .so):"
-msgstr "Search fds and mapped libraries (file name, socket:[inode], .so):"
+msgid "instalado (inicia sob demanda)"
+msgstr "installed (starts on demand)"
 
-msgid "Resultados para \"%1\""
-msgstr "Results for \"%1\""
+msgid "não instalado"
+msgstr "not installed"
 
-msgid "fd %1 (%2)"
-msgstr "fd %1 (%2)"
-
-msgid "mapa"
-msgstr "map"
-
-msgid "%1 resultado(s) para \"%2\""
-msgstr "%1 result(s) for \"%2\""
-
-msgid "Kernel: %1\nDistribuição: %2\nCPU: %3 (%4 núcleos)\nMemória: %5 usada de %6\nCarga (1/5/15 min): %7\nUptime: %8"
-msgstr "Kernel: %1\nDistribution: %2\nCPU: %3 (%4 cores)\nMemory: %5 used of %6\nLoad (1/5/15 min): %7\nUptime: %8"
-
-msgid "ProcForge — clone do Process Hacker para Linux.\n\nManipulação ativa do sistema sobre primitivas nativas: procfs, pidfd, ptrace, process_vm_readv/writev, cgroups v2, netlink, eBPF, KWin, com helper D-Bus privilegiado e polkit por ação.\n\nQt6 · KDE Frameworks 6 · Wayland."
-msgstr "ProcForge — a Process Hacker clone for Linux.\n\nActive system manipulation over native primitives: procfs, pidfd, ptrace, process_vm_readv/writev, cgroups v2, netlink, eBPF, KWin, with a privileged D-Bus helper and per-action polkit.\n\nQt6 · KDE Frameworks 6 · Wayland."
+msgid "<h3>ProcForge %1</h3><p>Clone do Process Hacker para Linux.</p><p>Manipulação ativa do sistema sobre primitivas nativas: procfs, pidfd, ptrace, process_vm_readv/writev, cgroups v2, netlink, eBPF e KWin, com helper D-Bus privilegiado e polkit por ação.</p><p>Helper: %2</p><p>Qt %3 · KDE Frameworks 6 · GPL-3.0-or-later<br>%4</p>"
+msgstr "<h3>ProcForge %1</h3><p>A Process Hacker clone for Linux.</p><p>Active system manipulation on native primitives: procfs, pidfd, ptrace, process_vm_readv/writev, cgroups v2, netlink, eBPF and KWin, with a privileged D-Bus helper and per-action polkit.</p><p>Helper: %2</p><p>Qt %3 · KDE Frameworks 6 · GPL-3.0-or-later<br>%4</p>"
 
 msgid "Intervalo de atualização:"
 msgstr "Update interval:"
@@ -912,11 +264,23 @@ msgstr "Update interval:"
 msgid "Atualização em tempo real (eventos cn_proc via helper)"
 msgstr "Real-time updates (cn_proc events via helper)"
 
+msgid "Verificar atualizações automaticamente (ao abrir e a cada 12 h)"
+msgstr "Check for updates automatically (at startup and every 12 h)"
+
+msgid "Confirmar antes de terminar ou matar processos"
+msgstr "Confirm before terminating or killing processes"
+
 msgid "Tema:"
 msgstr "Theme:"
 
 msgid "Idioma / Language:"
 msgstr "Language / Idioma:"
+
+msgid "%1 (PID %2, encerrado)"
+msgstr "%1 (PID %2, exited)"
+
+msgid "%1 (PID %2)"
+msgstr "%1 (PID %2)"
 
 msgid "Propriedades..."
 msgstr "Properties..."
@@ -933,8 +297,26 @@ msgstr "Resume (CONT)"
 msgid "Matar árvore inteira"
 msgstr "Kill entire tree"
 
-msgid "Prioridade (nice)..."
-msgstr "Priority (nice)..."
+msgid "Prioridade"
+msgstr "Priority"
+
+msgid "Alta (nice -10)"
+msgstr "High (nice -10)"
+
+msgid "Acima do normal (nice -5)"
+msgstr "Above normal (nice -5)"
+
+msgid "Normal (nice 0)"
+msgstr "Normal (nice 0)"
+
+msgid "Abaixo do normal (nice 5)"
+msgstr "Below normal (nice 5)"
+
+msgid "Ociosa (nice 19)"
+msgstr "Idle (nice 19)"
+
+msgid "Personalizada..."
+msgstr "Custom..."
 
 msgid "Afinidade de CPU..."
 msgstr "CPU affinity..."
@@ -963,14 +345,59 @@ msgstr "Close window"
 msgid "Remover limites (cgroup)"
 msgstr "Remove limits (cgroup)"
 
+msgid "Restabelecer rede"
+msgstr "Restore network"
+
 msgid "Cortar rede (sem internet)"
 msgstr "Cut network (no internet)"
+
+msgid "Ir para o processo pai"
+msgstr "Go to parent process"
+
+msgid "Abrir local do arquivo"
+msgstr "Open file location"
+
+msgid "Procurar handles deste executável..."
+msgstr "Find handles of this executable..."
+
+msgid "Copiar"
+msgstr "Copy"
+
+msgid "PID"
+msgstr "PID"
+
+msgid "Nome"
+msgstr "Name"
+
+msgid "Linha de comando"
+msgstr "Command line"
+
+msgid "Caminho do executável"
+msgstr "Executable path"
+
+msgid "Linha inteira (Ctrl+C)"
+msgstr "Whole row (Ctrl+C)"
+
+msgid "ATENÇÃO: é um processo do sistema; encerrá-lo pode travar ou reiniciar a máquina."
+msgstr "WARNING: this is a system process; ending it may freeze or reboot the machine."
+
+msgid "Matar %1 (PID %2) com SIGKILL? O processo não terá chance de salvar nada."
+msgstr "Kill %1 (PID %2) with SIGKILL? The process will not get a chance to save anything."
+
+msgid "Terminar %1 (PID %2)?"
+msgstr "Terminate %1 (PID %2)?"
+
+msgid "Terminar processo"
+msgstr "Terminate process"
+
+msgid "Matar"
+msgstr "Kill"
 
 msgid "Matar %1 (PID %2) e TODA a sua descendência com SIGKILL?"
 msgstr "Kill %1 (PID %2) and ALL its descendants with SIGKILL?"
 
-msgid "Matar árvore"
-msgstr "Kill tree"
+msgid "%1: %2 processo(s) da árvore encerrado(s)."
+msgstr "%1: %2 process(es) of the tree ended."
 
 msgid "Prioridade de %1 (PID %2)"
 msgstr "Priority of %1 (PID %2)"
@@ -986,6 +413,30 @@ msgstr "Allowed CPUs"
 
 msgid "CPU %1"
 msgstr "CPU %1"
+
+msgid "Prioridade de %1: nice %2."
+msgstr "Priority of %1: nice %2."
+
+msgid "Não consegui descobrir o executável de %1 (kernel thread ou sem permissão)."
+msgstr "Could not find the executable of %1 (kernel thread or no permission)."
+
+msgid "Colunas"
+msgstr "Columns"
+
+msgid "Restaurar colunas padrão"
+msgstr "Restore default columns"
+
+msgid "Salvar lista de processos"
+msgstr "Save process list"
+
+msgid "Texto (*.txt);;CSV (*.csv)"
+msgstr "Text (*.txt);;CSV (*.csv)"
+
+msgid "Não consegui gravar %1: %2"
+msgstr "Could not write %1: %2"
+
+msgid "%1 processos salvos em %2."
+msgstr "%1 processes saved to %2."
 
 msgid "Escolher biblioteca para injetar"
 msgstr "Choose a library to inject"
@@ -1113,8 +564,23 @@ msgstr "Suspending an individual thread is supported only for your own processes
 msgid "Threads — %1 (PID %2)"
 msgstr "Threads — %1 (PID %2)"
 
+msgid "TID"
+msgstr "TID"
+
+msgid "Estado"
+msgstr "State"
+
 msgid "Suspensa"
 msgstr "Suspended"
+
+msgid "Suspender thread"
+msgstr "Suspend thread"
+
+msgid "Retomar thread"
+msgstr "Resume thread"
+
+msgid "sim"
+msgstr "yes"
 
 msgid "Namespaces — %1 (PID %2)"
 msgstr "Namespaces — %1 (PID %2)"
@@ -1172,4 +638,865 @@ msgstr "Trace"
 
 msgid "rastreando %1 s com eBPF (roda no helper como root)..."
 msgstr "tracing %1 s with eBPF (runs in the helper as root)..."
+
+msgid "Não consegui consultar GitHub/GitLab."
+msgstr "Could not reach GitHub/GitLab."
+
+msgid "Executando"
+msgstr "Running"
+
+msgid "Dormindo"
+msgstr "Sleeping"
+
+msgid "Espera ininterrupta (D)"
+msgstr "Uninterruptible sleep (D)"
+
+msgid "Zumbi"
+msgstr "Zombie"
+
+msgid "Parado (stopped)"
+msgstr "Stopped"
+
+msgid "Rastreado (traced)"
+msgstr "Traced"
+
+msgid "Morto"
+msgstr "Dead"
+
+msgid "Ocioso (kernel)"
+msgstr "Idle (kernel)"
+
+msgid "Abrir ProcForge"
+msgstr "Open ProcForge"
+
+msgid "Verificar atualizações"
+msgstr "Check for updates"
+
+msgid "Iniciar com o sistema"
+msgstr "Start with the system"
+
+msgid "ProcForge\nCPU: %1%\nMemória: %2 de %3"
+msgstr "ProcForge\nCPU: %1%\nMemory: %2 of %3"
+
+msgid "Alvo inválido."
+msgstr "Invalid target."
+
+msgid "PTRACE_SEIZE falhou: %1"
+msgstr "PTRACE_SEIZE failed: %1"
+
+msgid "PTRACE_INTERRUPT falhou: %1"
+msgstr "PTRACE_INTERRUPT failed: %1"
+
+msgid "O alvo não parou como esperado."
+msgstr "The target did not stop as expected."
+
+msgid "GETREGSET falhou: %1"
+msgstr "GETREGSET failed: %1"
+
+msgid "PEEKTEXT falhou: %1"
+msgstr "PEEKTEXT failed: %1"
+
+msgid "POKETEXT falhou: %1"
+msgstr "POKETEXT failed: %1"
+
+msgid "SETREGSET falhou: %1"
+msgstr "SETREGSET failed: %1"
+
+msgid "SINGLESTEP falhou: %1"
+msgstr "SINGLESTEP failed: %1"
+
+msgid "close() no alvo falhou: %1"
+msgstr "close() in target failed: %1"
+
+msgid "pidfd_open falhou: %1"
+msgstr "pidfd_open failed: %1"
+
+msgid "pidfd_getfd falhou: %1"
+msgstr "pidfd_getfd failed: %1"
+
+msgid "O processo %1 não existe mais."
+msgstr "Process %1 no longer exists."
+
+msgid "O PID %1 foi reutilizado por outro processo."
+msgstr "PID %1 was reused by another process."
+
+msgid "Falha ao enviar sinal: %1"
+msgstr "Failed to send signal: %1"
+
+msgid "Recusado: não vou matar o PID %1."
+msgstr "Refused: I won't kill PID %1."
+
+msgid "%1 processo(s) da árvore encerrado(s)."
+msgstr "%1 process(es) of the tree terminated."
+
+msgid "Falha ao ajustar prioridade (nice %1): %2"
+msgstr "Failed to set priority (nice %1): %2"
+
+msgid "Selecione ao menos uma CPU."
+msgstr "Select at least one CPU."
+
+msgid "Falha ao definir afinidade: %1"
+msgstr "Failed to set affinity: %1"
+
+msgid "Falha ao definir escalonador: %1"
+msgstr "Failed to set scheduler: %1"
+
+msgid "Falha ao definir prioridade de I/O: %1"
+msgstr "Failed to set I/O priority: %1"
+
+msgid "Falha ao definir limite: %1"
+msgstr "Failed to set limit: %1"
+
+msgid "CPU"
+msgstr "CPU"
+
+msgid "I/O total"
+msgstr "I/O total"
+
+msgid "Memória (RSS)"
+msgstr "Memory (RSS)"
+
+msgid "Usuário"
+msgstr "User"
+
+msgid "Descrição"
+msgstr "Description"
+
+msgid "PID pai"
+msgstr "Parent PID"
+
+msgid "Threads"
+msgstr "Threads"
+
+msgid "Nice"
+msgstr "Nice"
+
+msgid "Memória virtual"
+msgstr "Virtual memory"
+
+msgid "Tempo de CPU"
+msgstr "CPU time"
+
+msgid "Iniciado em"
+msgstr "Started"
+
+msgid "Leitura de disco"
+msgstr "Disk read"
+
+msgid "Escrita em disco"
+msgstr "Disk write"
+
+msgid "Scanner de memória — %1 (PID %2)"
+msgstr "Memory scanner — %1 (PID %2)"
+
+msgid "Tipo:"
+msgstr "Type:"
+
+msgid "Valor:"
+msgstr "Value:"
+
+msgid "Primeira busca"
+msgstr "First scan"
+
+msgid "= valor"
+msgstr "= value"
+
+msgid "mudou"
+msgstr "changed"
+
+msgid "não mudou"
+msgstr "unchanged"
+
+msgid "aumentou"
+msgstr "increased"
+
+msgid "diminuiu"
+msgstr "decreased"
+
+msgid "> valor"
+msgstr "> value"
+
+msgid "< valor"
+msgstr "< value"
+
+msgid "Refinar"
+msgstr "Refine"
+
+msgid "Nova busca"
+msgstr "New scan"
+
+msgid "0 resultados"
+msgstr "0 results"
+
+msgid "Endereço"
+msgstr "Address"
+
+msgid "Valor"
+msgstr "Value"
+
+msgid "Editar valor..."
+msgstr "Edit value..."
+
+msgid "Congelar →"
+msgstr "Freeze →"
+
+msgid "Congelados (reescritos em loop):"
+msgstr "Frozen (rewritten in a loop):"
+
+msgid "Valor travado"
+msgstr "Locked value"
+
+msgid "Descongelar"
+msgstr "Unfreeze"
+
+msgid "Scanner"
+msgstr "Scanner"
+
+msgid "Ler memória"
+msgstr "Read memory"
+
+msgid "Endereço (hex):"
+msgstr "Address (hex):"
+
+msgid "Bytes:"
+msgstr "Bytes:"
+
+msgid "Ler"
+msgstr "Read"
+
+msgid "Escrever bytes"
+msgstr "Write bytes"
+
+msgid "Bytes (hex):"
+msgstr "Bytes (hex):"
+
+msgid "Gravar"
+msgstr "Write"
+
+msgid "Manipular páginas (mmap / mprotect / munmap)"
+msgstr "Manipulate pages (mmap / mprotect / munmap)"
+
+msgid "Tamanho (bytes):"
+msgstr "Size (bytes):"
+
+msgid "Proteção:"
+msgstr "Protection:"
+
+msgid "Alocar (mmap)"
+msgstr "Allocate (mmap)"
+
+msgid "Proteger (mprotect)"
+msgstr "Protect (mprotect)"
+
+msgid "Liberar (munmap)"
+msgstr "Free (munmap)"
+
+msgid "Memória (hex)"
+msgstr "Memory (hex)"
+
+msgid "Buscando..."
+msgstr "Searching..."
+
+msgid "Sem permissão para ler a memória deste processo (uid diferente). A busca direta funciona para processos do seu usuário; varredura cross-uid pelo helper é um passo futuro."
+msgstr "No permission to read this process's memory (different uid). Direct scanning works for your own processes; cross-uid scanning via the helper is a future step."
+
+msgid "Digite um valor para buscar."
+msgstr "Type a value to search for."
+
+msgid "Valor inválido para o tipo %1."
+msgstr "Invalid value for type %1."
+
+msgid "Faça a primeira busca antes de refinar."
+msgstr "Do the first scan before refining."
+
+msgid "Este modo de refino precisa de um valor válido (%1)."
+msgstr "This refine mode needs a valid value (%1)."
+
+msgid "%1 resultados (mostrando %2)"
+msgstr "%1 results (showing %2)"
+
+msgid "%1+ resultados (truncado — refine mais)"
+msgstr "%1+ results (truncated — refine further)"
+
+msgid "%1 resultados"
+msgstr "%1 results"
+
+msgid "Selecione um resultado."
+msgstr "Select a result."
+
+msgid "Editar valor em 0x%1"
+msgstr "Edit value at 0x%1"
+
+msgid "Novo valor (%1):"
+msgstr "New value (%1):"
+
+msgid "Falha ao escrever na memória (permissão?)."
+msgstr "Failed to write to memory (permission?)."
+
+msgid "Selecione um resultado para congelar."
+msgstr "Select a result to freeze."
+
+msgid "Não consegui ler o valor atual."
+msgstr "Could not read the current value."
+
+msgid "Esse endereço já está congelado."
+msgstr "That address is already frozen."
+
+msgid "Endereço inválido."
+msgstr "Invalid address."
+
+msgid "<falha ao ler — endereço não mapeado ou sem permissão>"
+msgstr "<failed to read — address not mapped or no permission>"
+
+msgid "Bytes hex inválidos (ex.: de ad be ef)."
+msgstr "Invalid hex bytes (e.g.: de ad be ef)."
+
+msgid "Gravar %1 byte(s) em 0x%2 do processo %3?"
+msgstr "Write %1 byte(s) at 0x%2 of process %3?"
+
+msgid "Escrever na memória"
+msgstr "Write to memory"
+
+msgid "%1 byte(s) gravado(s)."
+msgstr "%1 byte(s) written."
+
+msgid "Falha ao gravar (permissão?)."
+msgstr "Failed to write (permission?)."
+
+msgid "Tamanho inválido."
+msgstr "Invalid size."
+
+msgid "erro"
+msgstr "error"
+
+msgid "mmap falhou: %1"
+msgstr "mmap failed: %1"
+
+msgid "Região alocada em %1 (%2 bytes)."
+msgstr "Region allocated at %1 (%2 bytes)."
+
+msgid "Proteção alterada em 0x%1."
+msgstr "Protection changed at 0x%1."
+
+msgid "mprotect falhou: %1"
+msgstr "mprotect failed: %1"
+
+msgid "Liberar (munmap) %1 byte(s) em 0x%2 do processo %3?\nSe a região estiver em uso, o processo pode falhar."
+msgstr "Free (munmap) %1 byte(s) at 0x%2 of process %3?\nIf the region is in use, the process may crash."
+
+msgid "Liberar memória"
+msgstr "Free memory"
+
+msgid "Região liberada."
+msgstr "Region freed."
+
+msgid "munmap falhou: %1"
+msgstr "munmap failed: %1"
+
+msgid "Propriedades — %1 (PID %2)"
+msgstr "Properties — %1 (PID %2)"
+
+msgid "<b>%1</b> (PID %2)"
+msgstr "<b>%1</b> (PID %2)"
+
+msgid "Geral"
+msgstr "General"
+
+msgid "Estatísticas"
+msgstr "Statistics"
+
+msgid "Token"
+msgstr "Token"
+
+msgid "Ambiente"
+msgstr "Environment"
+
+msgid "Handles"
+msgstr "Handles"
+
+msgid "Memória"
+msgstr "Memory"
+
+msgid "Iniciado"
+msgstr "Started"
+
+msgid "Executável"
+msgstr "Executable"
+
+msgid "Diretório de trabalho"
+msgstr "Working directory"
+
+msgid "Raiz (chroot)"
+msgstr "Root (chroot)"
+
+msgid "Afinidade de CPU"
+msgstr "CPU affinity"
+
+msgid "Métrica"
+msgstr "Metric"
+
+msgid "real %1 · efetivo %2 · salvo %3 · fs %4"
+msgstr "real %1 · effective %2 · saved %3 · fs %4"
+
+msgid "UID"
+msgstr "UID"
+
+msgid "GID"
+msgstr "GID"
+
+msgid "Grupos"
+msgstr "Groups"
+
+msgid "Capabilities efetivas"
+msgstr "Effective capabilities"
+
+msgid "Capabilities permitidas"
+msgstr "Permitted capabilities"
+
+msgid "Capabilities herdáveis"
+msgstr "Inheritable capabilities"
+
+msgid "Capabilities do bounding set"
+msgstr "Bounding set capabilities"
+
+msgid "Capabilities ambientais"
+msgstr "Ambient capabilities"
+
+msgid "Seccomp"
+msgstr "Seccomp"
+
+msgid "filtro (BPF)"
+msgstr "filter (BPF)"
+
+msgid "estrito"
+msgstr "strict"
+
+msgid "desativado"
+msgstr "disabled"
+
+msgid "NoNewPrivs"
+msgstr "NoNewPrivs"
+
+msgid "não"
+msgstr "no"
+
+msgid "Contexto de segurança"
+msgstr "Security context"
+
+msgid "Variável"
+msgstr "Variable"
+
+msgid "Sem permissão para ler o ambiente (uid diferente)."
+msgstr "No permission to read the environment (different uid)."
+
+msgid "FD"
+msgstr "FD"
+
+msgid "Tipo"
+msgstr "Type"
+
+msgid "Alvo"
+msgstr "Target"
+
+msgid "Flags"
+msgstr "Flags"
+
+msgid "Fechar no dono"
+msgstr "Close in owner"
+
+msgid "O processo já encerrou."
+msgstr "The process has already exited."
+
+msgid "Fechar o descritor %1 (%2) dentro de %3? O programa pode falhar ao usar esse arquivo depois."
+msgstr "Close descriptor %1 (%2) inside %3? The program may fail when it uses that file later."
+
+msgid "Fechar descritor"
+msgstr "Close descriptor"
+
+msgid "Fechar"
+msgstr "Close"
+
+msgid "Base"
+msgstr "Base"
+
+msgid "Perms"
+msgstr "Perms"
+
+msgid "Tamanho"
+msgstr "Size"
+
+msgid "Arquivo"
+msgstr "File"
+
+msgid "Propriedades — %1 (PID %2, encerrado)"
+msgstr "Properties — %1 (PID %2, exited)"
+
+msgid "<b>%1</b> (PID %2) <span style='color:#d33'>encerrou; dados abaixo são os últimos lidos</span>"
+msgstr "<b>%1</b> (PID %2) <span style='color:#d33'>exited; the data below is the last read</span>"
+
+msgid "Tempo de CPU (usuário)"
+msgstr "CPU time (user)"
+
+msgid "Tempo de CPU (sistema)"
+msgstr "CPU time (system)"
+
+msgid "Dados/heap"
+msgstr "Data/heap"
+
+msgid "Pilha"
+msgstr "Stack"
+
+msgid "Swap"
+msgstr "Swap"
+
+msgid "Disco lido"
+msgstr "Disk read"
+
+msgid "Disco escrito"
+msgstr "Disk written"
+
+msgid "Trocas de contexto (voluntárias)"
+msgstr "Context switches (voluntary)"
+
+msgid "Trocas de contexto (involuntárias)"
+msgstr "Context switches (involuntary)"
+
+msgid "  [suspensa]"
+msgstr "  [suspended]"
+
+msgid "Uso"
+msgstr "Usage"
+
+msgid "RAM"
+msgstr "RAM"
+
+msgid "Leitura"
+msgstr "Read"
+
+msgid "Escrita"
+msgstr "Write"
+
+msgid "Recebido"
+msgstr "Received"
+
+msgid "Enviado"
+msgstr "Sent"
+
+msgid "Núcleos (%1)"
+msgstr "Cores (%1)"
+
+msgid "RAM %1 de %2 · swap %3"
+msgstr "RAM %1 of %2 · swap %3"
+
+msgid "RAM %1 de %2"
+msgstr "RAM %1 of %2"
+
+msgid "L %1/s · E %2/s"
+msgstr "R %1/s · W %2/s"
+
+msgid "↓ %1/s · ↑ %2/s"
+msgstr "↓ %1/s · ↑ %2/s"
+
+msgid "<b>Kernel:</b> %1 &nbsp; <b>Sistema:</b> %2<br><b>CPU:</b> %3 (%4 núcleos lógicos) &nbsp; <b>Carga (1/5/15 min):</b> %5 &nbsp; <b>Ligado há:</b> %6 &nbsp; <b>Processos:</b> %7"
+msgstr "<b>Kernel:</b> %1 &nbsp; <b>System:</b> %2<br><b>CPU:</b> %3 (%4 logical cores) &nbsp; <b>Load (1/5/15 min):</b> %5 &nbsp; <b>Uptime:</b> %6 &nbsp; <b>Processes:</b> %7"
+
+msgid "Nome de arquivo, socket:[inode], .so, caminho..."
+msgstr "File name, socket:[inode], .so, path..."
+
+msgid "Tudo"
+msgstr "Everything"
+
+msgid "Só descritores (fds)"
+msgstr "Descriptors only (fds)"
+
+msgid "Só bibliotecas e mapas"
+msgstr "Libraries and mappings only"
+
+msgid "Buscar"
+msgstr "Search"
+
+msgid "Processo"
+msgstr "Process"
+
+msgid "Digite o que procurar e pressione Enter."
+msgstr "Type what to look for and press Enter."
+
+msgid "Ir para o processo"
+msgstr "Go to process"
+
+msgid "Copiar alvo"
+msgstr "Copy target"
+
+msgid "Copiar PID"
+msgstr "Copy PID"
+
+msgid "Fechar este descritor no dono..."
+msgstr "Close this descriptor in its owner..."
+
+msgid "Injetar close(%1) no processo %2?\n\nAlvo: %3"
+msgstr "Inject close(%1) into process %2?\n\nTarget: %3"
+
+msgid "Fechar descritor alheio"
+msgstr "Close another process's descriptor"
+
+msgid "O processo %1 já encerrou; refaça a busca."
+msgstr "Process %1 has already exited; run the search again."
+
+msgid "Procurando \"%1\"..."
+msgstr "Searching for \"%1\"..."
+
+msgid "fd %1 (%2)"
+msgstr "fd %1 (%2)"
+
+msgid "mapa"
+msgstr "map"
+
+msgid "%1 resultado(s) em %2 processo(s)."
+msgstr "%1 result(s) in %2 process(es)."
+
+msgid "Parei em %1; refine a busca."
+msgstr "Stopped at %1; refine the search."
+
+msgid "Processos de outros usuários sem permissão de leitura ficam de fora."
+msgstr "Processes of other users that cannot be read are left out."
+
+msgid "%1 resultado(s) para \"%2\""
+msgstr "%1 result(s) for \"%2\""
+
+msgid "Offset"
+msgstr "Offset"
+
+msgid "Arquivo mapeado"
+msgstr "Mapped file"
+
+msgid "Nenhum processo selecionado"
+msgstr "No process selected"
+
+msgid "Injeta close() no processo alvo (libera a trava)."
+msgstr "Injects close() into the target process (releases the lock)."
+
+msgid "Salvar cópia..."
+msgstr "Save copy..."
+
+msgid "Duplica o fd via pidfd_getfd e salva o conteúdo do arquivo (recupera até arquivo apagado que o processo ainda mantém aberto)."
+msgstr "Duplicates the fd with pidfd_getfd and saves the file contents (even recovers a deleted file the process still keeps open)."
+
+msgid "Descritores"
+msgstr "Descriptors"
+
+msgid "Só bibliotecas (.so)"
+msgstr "Libraries only (.so)"
+
+msgid "Bibliotecas / Mapas"
+msgstr "Libraries / Maps"
+
+msgid "Selecione um descritor primeiro."
+msgstr "Select a descriptor first."
+
+msgid "Injetar close(%1) no processo %2 (%3)?\n\nAlvo: %4\n\nIsto libera a trava mantida por este fd (lockfile, socket do singleton, eventfd) sem matar o processo. A operação usa ptrace."
+msgstr "Inject close(%1) into process %2 (%3)?\n\nTarget: %4\n\nThis releases the lock held by this fd (lockfile, singleton socket, eventfd) without killing the process. The operation uses ptrace."
+
+msgid "close(%1) executado no alvo (retorno %2)."
+msgstr "close(%1) executed in target (return %2)."
+
+msgid "O fd %1 foi duplicado via pidfd_getfd, mas não é um arquivo comum (%2); só arquivos podem ser salvos. O fd do dono continua aberto."
+msgstr "fd %1 was duplicated with pidfd_getfd, but it is not a regular file (%2); only files can be saved. The owner's fd stays open."
+
+msgid "Salvar cópia do arquivo aberto (%1)"
+msgstr "Save a copy of the open file (%1)"
+
+msgid "Cópia salva em %1 (%2)."
+msgstr "Copy saved to %1 (%2)."
+
+msgid "Falha ao salvar a cópia em %1."
+msgstr "Failed to save the copy to %1."
+
+msgid "Não consegui executar %1."
+msgstr "Could not run %1."
+
+msgid "Serviços do sistema"
+msgstr "System services"
+
+msgid "Serviços do usuário"
+msgstr "User services"
+
+msgid "Filtrar serviços"
+msgstr "Filter services"
+
+msgid "Só ativos"
+msgstr "Active only"
+
+msgid "Unidade"
+msgstr "Unit"
+
+msgid "Carregada"
+msgstr "Loaded"
+
+msgid "Ativa"
+msgstr "Active"
+
+msgid "Sub"
+msgstr "Sub"
+
+msgid "Ativação"
+msgstr "Startup"
+
+msgid "Iniciar"
+msgstr "Start"
+
+msgid "Parar"
+msgstr "Stop"
+
+msgid "Recarregar"
+msgstr "Reload"
+
+msgid "Habilitar (no boot)"
+msgstr "Enable (on boot)"
+
+msgid "Desabilitar (no boot)"
+msgstr "Disable (on boot)"
+
+msgid "Mascarar"
+msgstr "Mask"
+
+msgid "Desmascarar"
+msgstr "Unmask"
+
+msgid "Status / journal..."
+msgstr "Status / journal..."
+
+msgid "Copiar nome"
+msgstr "Copy name"
+
+msgid "%1 de %2"
+msgstr "%1 of %2"
+
+msgid "código %1"
+msgstr "code %1"
+
+msgid "systemctl %1 %2 falhou:\n%3"
+msgstr "systemctl %1 %2 failed:\n%3"
+
+msgid "Status — %1"
+msgstr "Status — %1"
+
+msgid "carregando..."
+msgstr "loading..."
+
+msgid "(sem saída)"
+msgstr "(no output)"
+
+msgid "O serviço %1 não tem processo principal em execução."
+msgstr "Service %1 has no running main process."
+
+msgid "Processos com a rede cortada"
+msgstr "Processes with network cut"
+
+msgid "Caminho"
+msgstr "Path"
+
+msgid "Filtrar conexões (endereço, porta, processo)"
+msgstr "Filter connections (address, port, process)"
+
+msgid "Só portas abertas (LISTEN)"
+msgstr "Open ports only (LISTEN)"
+
+msgid "Proto"
+msgstr "Proto"
+
+msgid "Local"
+msgstr "Local"
+
+msgid "Remoto"
+msgstr "Remote"
+
+msgid "Fechar esta conexão (ss -K)"
+msgstr "Close this connection (ss -K)"
+
+msgid "Não consegui montar o filtro da conexão."
+msgstr "Could not build the connection filter."
+
+msgid "Matar processo (SIGTERM)"
+msgstr "Kill process (SIGTERM)"
+
+msgid "Matar processo (SIGKILL)"
+msgstr "Kill process (SIGKILL)"
+
+msgid "Copiar endereço remoto"
+msgstr "Copy remote address"
+
+msgid "Dispositivo"
+msgstr "Device"
+
+msgid "Leitura/s"
+msgstr "Read/s"
+
+msgid "Escrita/s"
+msgstr "Write/s"
+
+msgid "Lido (total)"
+msgstr "Read (total)"
+
+msgid "Escrito (total)"
+msgstr "Written (total)"
+
+msgid "Atualização do ProcForge"
+msgstr "ProcForge update"
+
+msgid "<h3>ProcForge %1 disponível</h3>Você está na versão %2."
+msgstr "<h3>ProcForge %1 is available</h3>You are on version %2."
+
+msgid "(a release não tem notas)"
+msgstr "(this release has no notes)"
+
+msgid "Atualizar agora"
+msgstr "Update now"
+
+msgid "Abrir página da versão"
+msgstr "Open release page"
+
+msgid "O atualizador (procforge-update) não está instalado; use a página da versão."
+msgstr "The updater (procforge-update) is not installed; use the release page."
+
+msgid "Aguarde a atualização terminar."
+msgstr "Wait for the update to finish."
+
+msgid "Atualizando... pode aparecer um pedido de senha (polkit)."
+msgstr "Updating... a password prompt (polkit) may appear."
+
+msgid "<b>Atualizado para %1.</b> Reinicie o ProcForge para usar a versão nova."
+msgstr "<b>Updated to %1.</b> Restart ProcForge to use the new version."
+
+msgid "Reiniciar agora"
+msgstr "Restart now"
+
+msgid "Você já está na versão mais recente."
+msgstr "You're already on the latest version."
+
+msgid "<b>A atualização falhou</b> (código %1). Nada foi trocado se a verificação falhou; veja o log acima."
+msgstr "<b>The update failed</b> (code %1). Nothing was replaced if verification failed; see the log above."
+
+msgid "Tentar de novo"
+msgstr "Try again"
+
+msgid "Não consegui iniciar o atualizador."
+msgstr "Could not start the updater."
+
+msgid "Atualização disponível"
+msgstr "Update available"
+
+msgid "ProcForge %1 disponível. Clique para ver e atualizar."
+msgstr "ProcForge %1 is available. Click to view and update."
+
+msgid "ProcForge %1 disponível: Ajuda › Verificar atualizações."
+msgstr "ProcForge %1 is available: Help › Check for updates."
+
+msgid "Você já está na versão mais recente (%1)."
+msgstr "You are already on the latest version (%1)."
+
+msgid "Atualizações"
+msgstr "Updates"
+
+msgid "Falha ao verificar atualizações: %1"
+msgstr "Failed to check for updates: %1"
 

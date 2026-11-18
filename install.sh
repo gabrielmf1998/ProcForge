@@ -3,11 +3,12 @@
 # ProcForge — instalador
 #   curl -fsSL https://raw.githubusercontent.com/gabrielmf1998/ProcForge/main/install.sh | bash
 #
-# Instala as dependências (via dnf), compila e instala:
-#   - a GUI (procforge) no seu usuário  (~/.local, SEM root)
-#   - o helper privilegiado (procforged) + polkit/D-Bus/systemd em /usr (via sudo)
-# Distros: Fedora / Nobara e derivados tradicionais. Em atômicos (Bazzite/Silverblue)
-# use o pacote .rpm da página de Releases (rpm-ostree install).
+# Instala as dependências (dnf, pacman ou apt), compila e instala:
+#   - a GUI (procforge) e o atualizador (procforge-update) no seu usuário (~/.local, SEM root)
+#   - o helper privilegiado (procforged) + polkit/D-Bus/systemd em /usr (sudo ou pkexec)
+# Distros: Fedora/Nobara, Arch e derivados, Debian 13+/Ubuntu 24.10+. Em atômicos
+# (Bazzite/Silverblue) use o pacote .rpm da página de Releases (rpm-ostree install).
+# Depois de instalado, atualize com:  procforge-update  (ou Ajuda > Verificar atualizações)
 # ============================================================================
 set -euo pipefail
 
@@ -23,33 +24,43 @@ warn() { printf "${Y}  !${N} %s\n" "$*"; }
 die()  { printf "${R}==> erro:${N} %s\n" "$*" >&2; exit 1; }
 
 [ "$(uname -s)" = "Linux" ] || die "ProcForge é só para Linux."
-[ "$(id -u)" -ne 0 ] || die "Não rode o instalador como root. Ele pede 'sudo' só na parte do helper."
+[ "$(id -u)" -ne 0 ] || die "Não rode o instalador como root. Ele pede a senha só nas partes que precisam."
 
 echo
 info "ProcForge — instalador"
 
+# Root só onde precisa (dependências e helper). sudo no terminal; pkexec se não houver sudo.
+if command -v sudo >/dev/null 2>&1; then AS_ROOT=(sudo); elif command -v pkexec >/dev/null 2>&1; then AS_ROOT=(pkexec); else die "preciso de sudo ou pkexec."; fi
+
 # --- 1. distro / gerenciador ----------------------------------------------
-if command -v rpm-ostree >/dev/null 2>&1; then
-    warn "Sistema atômico (rpm-ostree) detectado — Bazzite/Silverblue/Kinoite."
+if command -v rpm-ostree >/dev/null 2>&1 && [ -e /run/ostree-booted ]; then
+    warn "Sistema atômico (rpm-ostree) detectado: Bazzite/Silverblue/Kinoite."
     warn "Compilar da fonte aqui não é o ideal. Baixe o .rpm em:"
     warn "  https://github.com/gabrielmf1998/ProcForge/releases"
     warn "e instale com:  rpm-ostree install ./procforge-*.rpm && systemctl reboot"
     die  "instalação por fonte não suportada em atômico."
 fi
-command -v dnf >/dev/null 2>&1 || die "dnf não encontrado. Este instalador é para Fedora/Nobara. Compile manualmente (veja o README)."
 
-# --- 2. dependências -------------------------------------------------------
-DEPS_BUILD=(cmake ninja-build gcc-c++ extra-cmake-modules gettext
-            qt6-qtbase-devel kf6-kcoreaddons-devel kf6-ki18n-devel kf6-kwidgetsaddons-devel)
-DEPS_RUNTIME=(polkit bpftrace iproute util-linux libcap)
-info "Instalando dependências (precisa de sudo)…"
-sudo dnf install -y "${DEPS_BUILD[@]}" "${DEPS_RUNTIME[@]}"
-ok "dependências instaladas"
-if command -v cargo >/dev/null 2>&1; then
-    ok "cargo presente — o núcleo de memória será compilado em Rust"
+# --- 2. dependências (só o que falta) --------------------------------------
+if command -v dnf >/dev/null 2>&1; then
+    info "Fedora/Nobara: instalando dependências com dnf"
+    "${AS_ROOT[@]}" dnf install -y cmake ninja-build gcc-c++ extra-cmake-modules gettext \
+        qt6-qtbase-devel kf6-kcoreaddons-devel kf6-ki18n-devel kf6-kwidgetsaddons-devel \
+        polkit iproute util-linux libcap curl git
+elif command -v pacman >/dev/null 2>&1; then
+    info "Arch: instalando dependências com pacman (--needed: não reinstala o que já existe)"
+    "${AS_ROOT[@]}" pacman -S --needed --noconfirm cmake ninja gcc extra-cmake-modules gettext \
+        qt6-base kcoreaddons ki18n kwidgetsaddons polkit iproute2 util-linux libcap curl git
+elif command -v apt-get >/dev/null 2>&1; then
+    info "Debian/Ubuntu: instalando dependências com apt"
+    "${AS_ROOT[@]}" apt-get install -y --no-install-recommends cmake ninja-build g++ \
+        extra-cmake-modules gettext qt6-base-dev libkf6coreaddons-dev libkf6i18n-dev \
+        libkf6widgetsaddons-dev polkitd iproute2 util-linux libcap2-bin curl git
 else
-    warn "sem 'cargo' — o helper usará o núcleo de memória em C++ (opcional: sudo dnf install rust cargo)"
+    die "gerenciador de pacotes não suportado (dnf, pacman ou apt). Compile manualmente (veja o README)."
 fi
+ok "dependências prontas"
+command -v bpftrace >/dev/null 2>&1 || warn "opcional: instale 'bpftrace' para o rastreamento eBPF por processo"
 
 # --- 3. código-fonte -------------------------------------------------------
 if [ -f "CMakeLists.txt" ] && grep -q "project(procforge" CMakeLists.txt 2>/dev/null; then
@@ -69,43 +80,20 @@ ok "fonte pronta"
 
 # --- 4. build --------------------------------------------------------------
 info "Compilando…"
-cmake -S "$SRC" -B "$SRC/build" -G Ninja >/dev/null
-cmake --build "$SRC/build"
+cmake -S "$SRC" -B "$SRC/build" -G Ninja -DCMAKE_BUILD_TYPE=Release -DPROCFORGE_BUILD_TESTS=OFF >/dev/null
+nice -n 10 cmake --build "$SRC/build" --parallel "$(nproc 2>/dev/null || echo 2)"
 [ -x "$SRC/build/procforge" ] && [ -x "$SRC/build/procforged" ] || die "compilação não gerou os binários."
 ok "compilado"
 
 # --- 5. GUI no usuário (sem root) ------------------------------------------
 info "Instalando a GUI em $PREFIX (sem root)…"
-install -Dm755 "$SRC/build/procforge"                    "$PREFIX/bin/procforge"
-install -Dm644 "$SRC/data/org.procforge.ProcForge.desktop" "$PREFIX/share/applications/org.procforge.ProcForge.desktop"
-for _sz in 16 22 24 32 48 64 128 256; do
-    install -Dm644 "$SRC/data/icons/procforge-${_sz}.png" \
-        "$PREFIX/share/icons/hicolor/${_sz}x${_sz}/apps/procforge.png"
-done
-# O hicolor do usuário precisa de um index.theme, senão o gtk-update-icon-cache
-# falha ("No theme index file"). ATENÇÃO: ele tem precedência sobre o
-# /usr/share/icons/hicolor, então precisa ser o índice COMPLETO do sistema —
-# um índice mínimo sombreia o do sistema e quebra os ícones do desktop inteiro.
-if [ ! -f "$PREFIX/share/icons/hicolor/index.theme" ] \
-   && [ -f /usr/share/icons/hicolor/index.theme ]; then
-    cp /usr/share/icons/hicolor/index.theme "$PREFIX/share/icons/hicolor/index.theme"
-fi
-update-desktop-database "$PREFIX/share/applications" >/dev/null 2>&1 || true
-gtk-update-icon-cache -f -t "$PREFIX/share/icons/hicolor" >/dev/null 2>&1 || true
-# o menu do KDE só enxerga o .desktop depois que o ksycoca é reconstruído
-if command -v kbuildsycoca6 >/dev/null 2>&1; then
-    kbuildsycoca6 --noincremental >/dev/null 2>&1 || true
-elif command -v kbuildsycoca5 >/dev/null 2>&1; then
-    kbuildsycoca5 --noincremental >/dev/null 2>&1 || true
-fi
-# traduções (en_US); pt-BR é o idioma base
-[ -x "$SRC/build-i18n.sh" ] && bash "$SRC/build-i18n.sh" >/dev/null 2>&1 && ok "traduções instaladas" || true
-ok "GUI instalada em $PREFIX/bin/procforge"
+bash "$SRC/scripts/install-local.sh" --prefix "$PREFIX" --build "$SRC/build"
+ok "GUI e atualizador (procforge-update) instalados em $PREFIX/bin"
 case ":$PATH:" in *":$PREFIX/bin:"*) : ;; *) warn "adicione ao PATH:  export PATH=\"\$HOME/.local/bin:\$PATH\"" ;; esac
 
 # --- 6. helper privilegiado (root) ----------------------------------------
-info "Instalando o helper privilegiado (procforged) — precisa de sudo…"
-sudo bash "$SRC/install-helper.sh"
+info "Instalando o helper privilegiado (procforged), precisa de root…"
+"${AS_ROOT[@]}" bash "$SRC/install-helper.sh"
 ok "helper instalado (org.procforge.Helper1, ativado sob demanda pelo systemd)"
 
 echo

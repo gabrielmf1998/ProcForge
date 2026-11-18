@@ -42,6 +42,9 @@ private:
     void       reloadResults();
     ScanType   currentType() const;
     int        protFromChecks() const;   // R/W/X marcados -> PROT_*
+    // Busca/refino rodam numa thread (cópia do scanner) para não travar a janela.
+    void       runScanJob(bool first, RefineMode mode, const QString &value);
+    void       setScanBusy(bool busy);
 
     int      m_pid;
     quint64  m_starttime;
@@ -55,7 +58,9 @@ private:
     QTableWidget*m_results = nullptr;
     QTableWidget*m_frozen = nullptr;
 
-    struct Frozen { quint64 addr; QByteArray raw; QString shown; };
+    struct Frozen { quint64 addr; QByteArray raw; QString shown; ScanType type; };
+    QList<QWidget*> m_scanControls;
+    bool m_busy = false;
     QList<Frozen> m_freezeList;
 
     QTimer *m_displayTimer = nullptr;

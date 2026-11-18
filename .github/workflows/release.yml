@@ -1,0 +1,157 @@
+name: Release
+
+# Uma tag vX.Y.Z gera todos os pacotes, o SHA256SUMS (exigido pelo
+# procforge-update) e a release do GitHub com as notas de docs/releases/vX.Y.Z.md.
+# O passo do GitLab é feito à parte (veja docs/RELEASING.md).
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag existente (ex.: v0.5.0)'
+        required: true
+
+permissions:
+  contents: write
+
+env:
+  TAG: ${{ github.event.inputs.tag || github.ref_name }}
+
+jobs:
+  source:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.v.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.TAG }}
+      - id: v
+        run: |
+          V="${TAG#v}"
+          grep -q "project(procforge VERSION $V " CMakeLists.txt || { echo "CMakeLists não está em $V"; exit 1; }
+          test -f "docs/releases/v$V.md" || { echo "faltam as notas docs/releases/v$V.md"; exit 1; }
+          echo "version=$V" >> "$GITHUB_OUTPUT"
+      - run: git archive --format=tar.gz --prefix="procforge-${{ steps.v.outputs.version }}/" -o "procforge-${{ steps.v.outputs.version }}.tar.gz" HEAD
+      - uses: actions/upload-artifact@v4
+        with:
+          name: source
+          path: procforge-*.tar.gz
+
+  arch:
+    needs: source
+    runs-on: ubuntu-latest
+    container: archlinux:latest
+    steps:
+      - run: pacman -Syu --noconfirm --needed git
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.TAG }}
+      - uses: actions/download-artifact@v4
+        with:
+          name: source
+      - run: bash scripts/ci/deps.sh arch
+      - name: makepkg
+        run: |
+          V=${{ needs.source.outputs.version }}
+          useradd -m builder
+          mkdir /tmp/pkg && cp packaging/PKGBUILD "procforge-$V.tar.gz" /tmp/pkg/
+          SUM=$(sha256sum "procforge-$V.tar.gz" | cut -d' ' -f1)
+          sed -i "s/^sha256sums=.*/sha256sums=('$SUM')/" /tmp/pkg/PKGBUILD
+          chown -R builder /tmp/pkg
+          cd /tmp/pkg && runuser -u builder -- makepkg --noconfirm
+          cp /tmp/pkg/procforge-$V-1-x86_64.pkg.tar.zst "$GITHUB_WORKSPACE/"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: arch
+          path: procforge-*.pkg.tar.zst
+
+  fedora:
+    needs: source
+    runs-on: ubuntu-latest
+    container: fedora:latest
+    steps:
+      - run: dnf install -y git
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.TAG }}
+      - uses: actions/download-artifact@v4
+        with:
+          name: source
+      - run: bash scripts/ci/deps.sh fedora
+      - name: rpmbuild
+        run: |
+          mkdir -p ~/rpmbuild/SOURCES
+          cp procforge-*.tar.gz ~/rpmbuild/SOURCES/
+          rpmbuild -bb packaging/procforge.spec
+          cp ~/rpmbuild/RPMS/x86_64/procforge-${{ needs.source.outputs.version }}-1.*.x86_64.rpm .
+      - uses: actions/upload-artifact@v4
+        with:
+          name: fedora
+          path: procforge-*.rpm
+
+  debian:
+    needs: source
+    runs-on: ubuntu-latest
+    container: debian:trixie
+    steps:
+      - run: apt-get update && apt-get install -y git ca-certificates
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.TAG }}
+      - run: bash scripts/ci/deps.sh debian
+      - name: dpkg-buildpackage
+        run: |
+          git config --global --add safe.directory "$PWD"
+          dpkg-buildpackage -b -uc -us
+          cp ../procforge_${{ needs.source.outputs.version }}-1_amd64.deb .
+      - uses: actions/upload-artifact@v4
+        with:
+          name: debian
+          path: procforge_*.deb
+
+  appimage:
+    needs: source
+    runs-on: ubuntu-latest
+    container: debian:trixie
+    steps:
+      - run: apt-get update && apt-get install -y git ca-certificates
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.TAG }}
+      - run: bash scripts/ci/deps.sh debian
+      - name: AppImage (só a GUI)
+        run: bash scripts/ci/appimage.sh ${{ needs.source.outputs.version }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: appimage
+          path: ProcForge-*-x86_64.AppImage
+
+  publish:
+    needs: [source, arch, fedora, debian, appimage]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.TAG }}
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+      - name: SHA256SUMS
+        run: |
+          cd dist
+          ls -l
+          sha256sum procforge-*.tar.gz procforge-*.pkg.tar.zst procforge-*.rpm procforge_*.deb ProcForge-*.AppImage > SHA256SUMS
+          cat SHA256SUMS
+      - name: Release no GitHub
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          V=${{ needs.source.outputs.version }}
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" dist/* --clobber
+          else
+            gh release create "$TAG" dist/* --title "ProcForge $V" --notes-file "docs/releases/v$V.md" --verify-tag
+          fi

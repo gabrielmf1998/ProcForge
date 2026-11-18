@@ -13,6 +13,11 @@ class QObject;
 namespace helper {
 
 bool available();   // helper instalado/ativável no barramento de sistema?
+bool running();     // helper rodando agora (nome com dono no barramento)?
+
+// Versão reportada pelo Ping do helper ("procforged X"). Vazio se indisponível.
+// Ativa o helper se preciso; timeout curto (sem polkit).
+QString version();
 
 actions::Result sendSignal(int pid, quint64 starttime, int sig);
 

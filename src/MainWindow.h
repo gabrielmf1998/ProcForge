@@ -14,6 +14,8 @@ class ProcessFilterProxy;
 class ProcessCollector;
 class DetailPanel;
 class TrayIcon;
+class UpdateManager;
+class QSplitter;
 
 class MainWindow : public QMainWindow {
     Q_OBJECT
@@ -49,12 +51,21 @@ private:
     void     ebpfCurrent();
     void     propertiesCurrent();
     void     copyPidCurrent();
+    void     setNiceCurrent(int nice);              // menu Prioridade (classes do PH)
+    void     goToParentCurrent();
+    void     openLocationCurrent();
+    void     copyTextCurrent(int what);             // 0 nome, 1 cmdline, 2 exe, 3 linha
+    bool     confirmSignal(const ProcInfo &pi, int sig);
+    void     saveProcessList();
+    void     showHeaderMenu(const QPoint &pos);
+    void     resubscribeSoon();
     // barra de ferramentas / menus estilo Process Hacker
     void     runCommand();
     void     runAsDialog();   // "Executar como…" (novo processo via helper)
     void     findHandlesOrDlls();
     void     systemInformation();
     void     aboutDialog();
+    void     checkForUpdates();
     void     populateUsersMenu();
     void     openOptions();
 
@@ -82,4 +93,7 @@ private:
     QElapsedTimer        m_lastScanTimer;              // p/ eventos cn_proc respeitarem o intervalo
 
     TrayIcon            *m_tray = nullptr;
+    UpdateManager       *m_updates = nullptr;
+    QSplitter           *m_splitter = nullptr;
+    double               m_cpuTotal = 0.0;
 };
