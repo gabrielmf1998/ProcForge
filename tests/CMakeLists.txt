@@ -12,7 +12,8 @@ function(procforge_test name)
     target_link_libraries(${name} PRIVATE procforge_gui Qt6::Test Qt6::Network)
     target_compile_definitions(${name} PRIVATE
         FAKEAPP_PATH="$<TARGET_FILE:procforge_fakeapp>"
-        TEST_DISK_DIR="${CMAKE_CURRENT_BINARY_DIR}")
+        TEST_DISK_DIR="${CMAKE_CURRENT_BINARY_DIR}"
+        PROCFORGE_SCRIPTS_DIR="${CMAKE_SOURCE_DIR}/scripts")
     add_dependencies(${name} procforge_fakeapp)
     add_test(NAME ${name} COMMAND ${name})
     set_tests_properties(${name} PROPERTIES ENVIRONMENT "${_pf_env}" TIMEOUT 120)

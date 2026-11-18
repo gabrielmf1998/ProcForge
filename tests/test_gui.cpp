@@ -8,6 +8,7 @@
 #include "panels/ProcessProperties.h"
 #include "panels/ScannerWindow.h"
 #include "panels/SysInfoWindow.h"
+#include "panels/UpdateDialog.h"
 
 #include <KLocalizedString>
 #include <QAbstractItemModel>
@@ -23,6 +24,10 @@
 #include <QTableWidget>
 #include <QTest>
 #include <QTreeView>
+#include <QHostAddress>
+#include <QTcpServer>
+#include <QTemporaryDir>
+#include <QFile>
 #include <functional>
 
 class TestGui : public QObject {
@@ -39,6 +44,76 @@ private Q_SLOTS:
         KLocalizedString::setLanguages({QStringLiteral("pt_BR")});
         qRegisterMetaType<ProcInfo>("ProcInfo");
         qRegisterMetaType<QList<ProcInfo>>("QList<ProcInfo>");
+    }
+
+    // Roda ANTES da janela principal: o caminho do executável fica fixo na 1ª
+    // chamada, e aqui ele tem que ser o "AppImage" falso.
+    void updateDialogAppImage()
+    {
+        QTemporaryDir tmp;
+        const QString app = tmp.filePath(QStringLiteral("ProcForge-x86_64.AppImage"));
+        auto mkapp = [](const QString &path, const QString &ver) {
+            QFile f(path);
+            QVERIFY(f.open(QIODevice::WriteOnly));
+            f.write(QStringLiteral("#!/bin/sh\necho \"procforge %1\"\n").arg(ver).toUtf8());
+            f.close();
+            f.setPermissions(QFileDevice::ReadOwner | QFileDevice::WriteOwner | QFileDevice::ExeOwner);
+        };
+        mkapp(app, QStringLiteral("0.0.1"));
+        QDir().mkpath(tmp.filePath(QStringLiteral("www/releases/tags")));
+        mkapp(tmp.filePath(QStringLiteral("www/ProcForge-9.9.9-x86_64.AppImage")), QStringLiteral("9.9.9"));
+        QProcess sum;
+        sum.setWorkingDirectory(tmp.filePath(QStringLiteral("www")));
+        sum.setStandardOutputFile(tmp.filePath(QStringLiteral("www/SHA256SUMS")));
+        sum.start(QStringLiteral("sha256sum"), {QStringLiteral("ProcForge-9.9.9-x86_64.AppImage")});
+        QVERIFY(sum.waitForFinished(5000));
+
+        QTcpServer probe;
+        QVERIFY(probe.listen(QHostAddress::LocalHost));
+        const quint16 port = probe.serverPort();
+        probe.close();
+        const QString base = QStringLiteral("http://127.0.0.1:%1").arg(port);
+        {
+            QFile j(tmp.filePath(QStringLiteral("www/releases/tags/v9.9.9")));
+            QVERIFY(j.open(QIODevice::WriteOnly));
+            j.write(QStringLiteral("{\"tag_name\": \"v9.9.9\", \"assets\": ["
+                                   "{\"browser_download_url\": \"%1/ProcForge-9.9.9-x86_64.AppImage\"},"
+                                   "{\"browser_download_url\": \"%1/SHA256SUMS\"}]}").arg(base).toUtf8());
+        }
+        QProcess srv;
+        srv.setWorkingDirectory(tmp.filePath(QStringLiteral("www")));
+        srv.start(QStringLiteral("python3"), {QStringLiteral("-m"), QStringLiteral("http.server"),
+                                              QString::number(port), QStringLiteral("--bind"), QStringLiteral("127.0.0.1")});
+        if (!srv.waitForStarted(3000))
+            QSKIP("python3 indisponível");
+        QTest::qWait(700);
+
+        qputenv("APPIMAGE", app.toUtf8());
+        qputenv("PROCFORGE_RELEASES_API", (base + QStringLiteral("/releases")).toUtf8());
+        qputenv("PROCFORGE_GITLAB_API", (base + QStringLiteral("/nada")).toUtf8());
+        qputenv("PATH", QByteArray(PROCFORGE_SCRIPTS_DIR) + ':' + qgetenv("PATH"));
+        QCoreApplication::setApplicationVersion(QStringLiteral("0.0.1"));
+        QCOMPARE(UpdateDialog::selfExecutable(), app);
+        QVERIFY(!UpdateDialog::updaterPath().isEmpty());
+
+        auto *dlg = new UpdateDialog(QStringLiteral("v9.9.9"), QStringLiteral("http://x"), QStringLiteral("**notas**"));
+        dlg->show();
+        auto *btn = dlg->findChild<QPushButton*>(QStringLiteral("updateNow"));
+        QVERIFY(btn && btn->isEnabled());
+        btn->click();
+        QTRY_VERIFY_WITH_TIMEOUT(btn->isEnabled(), 30000);
+        QCOMPARE(btn->text(), QStringLiteral("Reiniciar agora"));
+        QProcess run;
+        run.start(app, {});
+        QVERIFY(run.waitForFinished(3000));
+        QCOMPARE(QString::fromUtf8(run.readAllStandardOutput()).trimmed(), QStringLiteral("procforge 9.9.9"));
+        delete dlg;
+        srv.kill();
+        srv.waitForFinished(2000);
+        qunsetenv("APPIMAGE");
+        qunsetenv("PROCFORGE_RELEASES_API");
+        qunsetenv("PROCFORGE_GITLAB_API");
+        QCoreApplication::setApplicationVersion(QStringLiteral(PROCFORGE_VERSION));
     }
 
     void mainWindow()

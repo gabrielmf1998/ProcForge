@@ -91,6 +91,8 @@ UpdateDialog::UpdateDialog(const QString &version, const QString &url, const QSt
     m_update->setIcon(QIcon::fromTheme(QStringLiteral("update-none")));
     m_open = bb->addButton(i18n("Abrir página da versão"), QDialogButtonBox::ActionRole);
     m_close = bb->addButton(QDialogButtonBox::Close);
+    m_update->setObjectName(QStringLiteral("updateNow"));
+    m_status->setObjectName(QStringLiteral("updateStatus"));
     v->addWidget(bb);
 
     connect(m_open, &QPushButton::clicked, this, [this]() {
