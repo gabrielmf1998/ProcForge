@@ -2,7 +2,28 @@
 
 Fases 0-4 completas. Clone funcional do Process Hacker, muito além do básico.
 
-## Feito nesta rodada (0.3.0)
+## Feito nesta rodada (0.4.0) — correção de bugs
+- **Verificador de atualização dava falso positivo permanente.** A versão do
+  app era `"0.3"` e as tags são `v0.3.0`; `QVersionNumber(0,3,0) > (0,3)` é
+  verdadeiro, então o app SEMPRE notificava "atualização disponível 0.3.0"
+  mesmo estando atualizado. Agora `applicationVersion` tem três segmentos
+  (`0.4.0`), igual ao formato das tags. (CMake/spec/PKGBUILD/deb bumpados.)
+- **Assinatura de eventos em tempo real duplicava ao religar.** `Ver ›
+  Opções` liga/desliga "Atualização em tempo real"; o `subscribeProcEvents`
+  conectava o sinal D-Bus `ProcEvent` de novo sem desconectar o anterior, e
+  cada evento `cn_proc` passava a disparar DOIS rescans. Agora guarda
+  receptor/slot e `bus.disconnect()` antes de reconectar (e no unsubscribe).
+- **"Matar árvore inteira" não funcionava em processo de root/outro usuário.**
+  `actions::killTree` usava `kill()` direto; sem privilégio ele falha em
+  silêncio e a função ainda retornava "ok (0 encerrados)", sem cair no helper.
+  Novo método privilegiado `KillTree(pid, starttime)` no helper faz
+  STOP+coleta+KILL da árvore toda como root, com UM diálogo do polkit (reusa a
+  action `org.procforge.signal.other`, sem nova policy). A GUI usa a via direta
+  para alvos do próprio uid e o helper para os demais (`killTreeAsync`).
+- **Limpeza:** trocado `invalidateFilter()` (deprecado no Qt 6.12) por
+  `invalidateRowsFilter()` no filtro de busca; `Ping` reporta `0.4.0`.
+
+## Rodada anterior (0.3.0)
 - **Cortar/restabelecer rede de um processo** (menu de contexto): novo método
   `NetBlock` no helper — DROP via `iptables`/`ip6tables` casando pelo cgroup v2
   (`-m cgroup --path`), nas chains OUTPUT e INPUT. Reaproveita a MESMA

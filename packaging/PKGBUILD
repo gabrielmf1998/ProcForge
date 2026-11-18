@@ -1,6 +1,6 @@
 # Maintainer: Gabriel (kxinha) <gabriel17166@gmail.com>
 pkgname=procforge
-pkgver=0.3.0
+pkgver=0.4.0
 pkgrel=1
 pkgdesc="Clone do Process Hacker para Linux — manipulação ativa de processos, memória e sistema"
 arch=('x86_64')

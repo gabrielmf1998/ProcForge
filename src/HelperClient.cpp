@@ -179,11 +179,23 @@ QString bpfTrace(int pid, quint64 starttime, const QString &mode, int seconds, Q
                          { uint(pid), qulonglong(starttime), mode, int(seconds) }, err);
 }
 
+// Guarda o receptor/slot da última assinatura para poder DESCONECTAR o sinal
+// D-Bus ao cancelar. Sem isso, religar "tempo real" nas Opções conectava o
+// ProcEvent uma segunda vez e cada evento disparava dois rescans.
+static QObject   *g_evtReceiver = nullptr;
+static QByteArray g_evtSlot;
+
 bool subscribeProcEvents(QObject *receiver, const char *slot)
 {
     auto bus = QDBusConnection::systemBus();
+    // Desconecta uma assinatura anterior (idempotente) antes de reconectar.
+    if (g_evtReceiver && !g_evtSlot.isEmpty())
+        bus.disconnect(QLatin1String(kService), QLatin1String(kPath), QLatin1String(kIface),
+                       QStringLiteral("ProcEvent"), g_evtReceiver, g_evtSlot.constData());
     bus.connect(QLatin1String(kService), QLatin1String(kPath), QLatin1String(kIface),
                 QStringLiteral("ProcEvent"), receiver, slot);
+    g_evtReceiver = receiver;
+    g_evtSlot     = slot;
     QDBusMessage msg = QDBusMessage::createMethodCall(
         QLatin1String(kService), QLatin1String(kPath), QLatin1String(kIface),
         QStringLiteral("SubscribeProcEvents"));
@@ -193,10 +205,17 @@ bool subscribeProcEvents(QObject *receiver, const char *slot)
 
 void unsubscribeProcEvents()
 {
+    auto bus = QDBusConnection::systemBus();
+    if (g_evtReceiver && !g_evtSlot.isEmpty()) {
+        bus.disconnect(QLatin1String(kService), QLatin1String(kPath), QLatin1String(kIface),
+                       QStringLiteral("ProcEvent"), g_evtReceiver, g_evtSlot.constData());
+        g_evtReceiver = nullptr;
+        g_evtSlot.clear();
+    }
     QDBusMessage msg = QDBusMessage::createMethodCall(
         QLatin1String(kService), QLatin1String(kPath), QLatin1String(kIface),
         QStringLiteral("UnsubscribeProcEvents"));
-    QDBusConnection::systemBus().call(msg, QDBus::NoBlock);
+    bus.call(msg, QDBus::NoBlock);
 }
 
 // ---- assíncrono ----
@@ -289,6 +308,12 @@ void bpfTraceAsync(int pid, quint64 st, const QString &mode, int seconds, QObjec
     callAsyncStr(QStringLiteral("BpfTrace"),
                  { uint(pid), qulonglong(st), mode, int(seconds) }, ctx, std::move(cb),
                  (seconds + 120) * 1000);
+}
+
+void killTreeAsync(int pid, quint64 st, QObject *ctx, StrCb cb)
+{
+    callAsyncStr(QStringLiteral("KillTree"),
+                 { uint(pid), qulonglong(st) }, ctx, std::move(cb), kTimeout);
 }
 
 void nsRunAsync(int pid, quint64 st, const QString &program, const QStringList &args, QObject *ctx, StrCb cb)

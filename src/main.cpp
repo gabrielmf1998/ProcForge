@@ -17,7 +17,7 @@ int main(int argc, char **argv)
     QApplication app(argc, argv);
     QApplication::setApplicationName(QStringLiteral("procforge"));
     QApplication::setApplicationDisplayName(QStringLiteral("ProcForge"));
-    QApplication::setApplicationVersion(QStringLiteral("0.3"));
+    QApplication::setApplicationVersion(QStringLiteral("0.4.0"));
     QApplication::setDesktopFileName(QStringLiteral("org.procforge.ProcForge"));
 
     QApplication::setOrganizationName(QStringLiteral("ProcForge"));

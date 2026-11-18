@@ -10,6 +10,7 @@
 #include <QDBusServiceWatcher>
 #include <QDir>
 #include <QFile>
+#include <QHash>
 #include <QStandardPaths>
 #include <QStringList>
 #include <QVector>
@@ -262,7 +263,7 @@ bool Helper::hasSubscriber() const { return !m_subscribers.isEmpty(); }
 QString Helper::Ping()
 {
     Q_EMIT activity();
-    return QStringLiteral("procforged 0.1");
+    return QStringLiteral("procforged 0.4.0");
 }
 
 void Helper::audit(const QString &action, uint pid, const QString &result)
@@ -321,6 +322,41 @@ void Helper::SendSignal(uint pid, qulonglong starttime, int sig)
         return;
     }
     audit(QStringLiteral("SendSignal(%1)").arg(sig), pid, QStringLiteral("ok"));
+}
+
+QString Helper::KillTree(uint pid, qulonglong starttime)
+{
+    if (!authorize(QStringLiteral("org.procforge.signal.other"))) return {};
+    if (!identityOk(pid, starttime)) return {};
+
+    // Congela o topo para a árvore não escapar forkando durante a coleta.
+    ::kill(static_cast<pid_t>(pid), SIGSTOP);
+
+    QHash<uint, QVector<uint>> childrenOf;
+    for (int p : procfs::listPids()) {
+        procfs::StatFields st;
+        if (procfs::readStat(p, st))
+            childrenOf[static_cast<uint>(st.ppid)].append(static_cast<uint>(p));
+    }
+
+    QVector<uint> order, queue;
+    queue.append(pid);
+    while (!queue.isEmpty()) {
+        const uint p = queue.takeFirst();
+        order.append(p);
+        for (uint c : childrenOf.value(p))
+            queue.append(c);
+    }
+
+    int killed = 0;
+    for (int i = order.size() - 1; i >= 0; --i) {
+        const pid_t p = static_cast<pid_t>(order.at(i));
+        ::kill(p, SIGCONT);
+        if (::kill(p, SIGKILL) == 0)
+            ++killed;
+    }
+    audit(QStringLiteral("KillTree"), pid, QStringLiteral("ok(%1)").arg(killed));
+    return QStringLiteral("%1").arg(killed);
 }
 
 void Helper::Renice(uint pid, qulonglong starttime, int nice)

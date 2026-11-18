@@ -25,6 +25,9 @@ Q_SIGNALS:
 public Q_SLOTS:
     QString    Ping();
     void       SendSignal(uint pid, qulonglong starttime, int sig);
+    // Mata o processo e TODA a sua descendência (SIGKILL), como root. Uma única
+    // autorização polkit em vez de uma por processo da árvore.
+    QString    KillTree(uint pid, qulonglong starttime);
     void       Renice(uint pid, qulonglong starttime, int nice);
     void       SetAffinity(uint pid, qulonglong starttime, const QList<uint> &cpus);
     QByteArray ReadMem(uint pid, qulonglong starttime, qulonglong addr, uint len);

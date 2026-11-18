@@ -19,7 +19,7 @@ public:
     void setFilterText(const QString &t)
     {
         m_text = t.trimmed();
-        invalidateFilter();
+        invalidateRowsFilter();
     }
 
 protected:

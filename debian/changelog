@@ -1,3 +1,19 @@
+procforge (0.4.0-1) unstable; urgency=medium
+
+  * Corrigido: o verificador de atualizacoes acusava "versao nova disponivel"
+    para sempre, porque a versao do app ("0.3") era comparada com as tags
+    "v0.3.0" e 0.3.0 e considerado maior que 0.3. A versao agora tem tres
+    segmentos (0.4.0).
+  * Corrigido: religar "Atualizacao em tempo real" nas Opcoes conectava o sinal
+    de eventos do helper uma segunda vez, dobrando os rescans (gasto de CPU).
+    Agora a assinatura anterior e desconectada antes de reconectar.
+  * Corrigido: "Matar arvore inteira" em processo de root/outro usuario nao
+    fazia nada (kill direto falhava sem privilegio). Novo metodo KillTree no
+    helper encerra a arvore toda com um unico dialogo do polkit.
+  * Limpeza: removido o uso de API deprecada no filtro de busca.
+
+ -- Gabriel (kxinha) <gabriel17166@gmail.com>  Tue, 18 Nov 2026 04:00:00 -0300
+
 procforge (0.3.0-1) unstable; urgency=medium
 
   * Cortar/restabelecer toda a rede de um processo (menu de contexto): DROP

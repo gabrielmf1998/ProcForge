@@ -60,6 +60,8 @@ void netBlockAsync(int pid, quint64 starttime, bool block, QObject *ctx, ResultC
 
 // Retornam texto (err vazio em sucesso), assíncronos.
 using StrCb = std::function<void(const QString &out, const QString &err)>;
+// Mata a árvore inteira via helper (um só diálogo do polkit). out = contagem.
+void killTreeAsync(int pid, quint64 starttime, QObject *ctx, StrCb cb);
 void bpfTraceAsync(int pid, quint64 starttime, const QString &mode, int seconds, QObject *ctx, StrCb cb);
 void nsRunAsync(int pid, quint64 starttime, const QString &program, const QStringList &args, QObject *ctx, StrCb cb);
 

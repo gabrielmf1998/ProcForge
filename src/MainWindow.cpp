@@ -871,12 +871,27 @@ void MainWindow::killTreeCurrent()
         KStandardGuiItem::cancel());
     if (btn != KMessageBox::Continue)
         return;
+    auto rescan = [this]() { QMetaObject::invokeMethod(m_collector, "scanOnce", Qt::QueuedConnection); };
+
+    // Processo de outro usuário/root: a via direta falharia sem privilégio.
+    // Manda a árvore inteira para o helper (um só diálogo do polkit).
+    if (pi.uid != static_cast<uint>(::getuid())) {
+        const QString name = pi.name;
+        helper::killTreeAsync(pi.pid, pi.starttime, this,
+                              [this, name, rescan](const QString &out, const QString &err) {
+            if (!err.isEmpty()) KMessageBox::error(this, err);
+            else statusBar()->showMessage(i18n("%1: %2 processo(s) da árvore encerrado(s).", name, out), 4000);
+            rescan();
+        });
+        return;
+    }
+
     const actions::Result r = actions::killTree(pi.pid);
     if (!r.ok)
         KMessageBox::error(this, r.error);
     else if (!r.detail.isEmpty())
         statusBar()->showMessage(r.detail, 4000);
-    QMetaObject::invokeMethod(m_collector, "scanOnce", Qt::QueuedConnection);
+    rescan();
 }
 
 void MainWindow::reniceCurrent()

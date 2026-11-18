@@ -1,5 +1,5 @@
 Name:           procforge
-Version:        0.3.0
+Version:        0.4.0
 Release:        1%{?dist}
 Summary:        Clone do Process Hacker para Linux — manipulação ativa de processos, memória e sistema
 
@@ -82,6 +82,18 @@ gtk-update-icon-cache %{_datadir}/icons/hicolor &>/dev/null || :
 %{_datadir}/locale/en/LC_MESSAGES/procforge.mo
 
 %changelog
+* Tue Nov 18 2026 Gabriel (kxinha) <gabriel17166@gmail.com> - 0.4.0-1
+- Corrigido: o verificador de atualizações acusava "versão nova" para sempre,
+  porque a versão do app ("0.3") era comparada com as tags "v0.3.0" e 0.3.0 >
+  0.3. A versão agora tem três segmentos (0.4.0).
+- Corrigido: religar "Atualização em tempo real" nas Opções conectava o sinal
+  de eventos do helper uma segunda vez, dobrando os rescans. A assinatura
+  anterior agora é desconectada antes de reconectar.
+- Corrigido: "Matar árvore inteira" em processo de root/outro usuário não fazia
+  nada (kill direto sem privilégio). Novo método KillTree no helper encerra a
+  árvore toda com um único diálogo do polkit (reusa a action signal.other).
+- Limpeza: removido o uso de API deprecada (invalidateFilter) no filtro.
+
 * Thu Sep 17 2026 Gabriel (kxinha) <gabriel17166@gmail.com> - 0.3.0-1
 - Cortar/restabelecer TODA a rede de um processo (menu de contexto): DROP via
   iptables+ip6tables casando pelo cgroup v2 (`-m cgroup --path`), reaproveita o
